@@ -1,7 +1,7 @@
 'Simple terminal program v 0.1 by Rich Martin (datawiz) 11:13pm 02 Oct 2020
 'Also code from Flashback.bas 1.0.0 by Rich Martin (datawiz)
 'Also code from vegipete for the GetFile routine
-'Version 1.8 John Crutti Jr 12-09-2020
+'Version 1.9 John Crutti Jr 1-09-2021
 
 OPTION EXPLICIT
 ON ERROR IGNORE
@@ -57,12 +57,20 @@ dim TERM_COLOR1 = 255 'init value for white
 dim TERM_COLOR2 = 255 'init value for white
 dim TERM_COLOR3 = 255 'init value for white
 dim debug% 'for future debug mode
+dim phonebookentry$(10) as string ' array holding the user's phone book
+dim phonebookusername$(10) as string
+dim phonebookpassword$(10) as string
+dim phoneentry% = 0 'int of array value for the phone book
+dim dialchoice$ 'string of selections in autodial phone book screen
+
+
 
 'main function
 cls
 introscreen 'show the title screen when launched
 pause 2500
 cls
+loadphonebook 'load phone book, if exists
 welcomebanner 'banner at top of terminal screen showing help and exit commands
 setcomport 'set the COM port you want to use 1 or 2
 setcomspeed 'choose the speed of the COM port
@@ -85,6 +93,8 @@ if CHAR_OUT$ <> "" then
  C$ = getchar$() 'not sure what this does
   if altflag% = 1 then 'check for ALT being asserted
   select case lcase$(C$) 'turn all characters to lowercase
+      case "a" 'show the autodial phone book screen
+        phonebook
       case "b" 'set the COM port parameters again
         onlineflag% = 0 'take us "offline" so we don't see incoming data during this.
         cls
@@ -185,10 +195,7 @@ if CHAR_OUT$ <> "" then
         pause 250
         modeminfo  
     end select
-  else
-    if C$ <> "" then    
-      if soundflag% = 1 then play tone 1600, 1600, 10
-    end if  
+  else  
 blinkcursor
 print #5, CHAR_OUT$;
       if linefeeds% = 1 and CHAR_OUT$ = chr$(13) then    
@@ -201,11 +208,80 @@ end if
         print ""
       end if
   end if
-'print input$(LOC(#5),#5);
 loop
 end
 
 
+sub loadphonebook
+open "bbslist.cfg" for input as #6
+line input #6, phonebookentry$(1)
+line input #6, phonebookusername$(1)
+line input #6, phonebookpassword$(1)
+line input #6, phonebookentry$(2)
+line input #6, phonebookusername$(2)
+line input #6, phonebookpassword$(2)
+line input #6, phonebookentry$(3)
+line input #6, phonebookusername$(3)
+line input #6, phonebookpassword$(3)
+line input #6, phonebookentry$(4)
+line input #6, phonebookusername$(4)
+line input #6, phonebookpassword$(4)
+line input #6, phonebookentry$(5)
+line input #6, phonebookusername$(5)
+line input #6, phonebookpassword$(5)
+line input #6, phonebookentry$(6)
+line input #6, phonebookusername$(6)
+line input #6, phonebookpassword$(6)
+line input #6, phonebookentry$(7)
+line input #6, phonebookusername$(7)
+line input #6, phonebookpassword$(7)
+line input #6, phonebookentry$(8)
+line input #6, phonebookusername$(8)
+line input #6, phonebookpassword$(8)
+line input #6, phonebookentry$(9)
+line input #6, phonebookusername$(9)
+line input #6, phonebookpassword$(9)
+line input #6, phonebookentry$(10)
+line input #6, phonebookusername$(10)
+line input #6, phonebookpassword$(10)
+close #6
+end sub
+
+sub savephonebook
+open "bbslist.cfg" for output as #6
+print #6, phonebookentry$(1)
+print #6, phonebookusername$(1)
+print #6, phonebookpassword$(1)
+print #6, phonebookentry$(2)
+print #6, phonebookusername$(2)
+print #6, phonebookpassword$(2)
+print #6, phonebookentry$(3)
+print #6, phonebookusername$(3)
+print #6, phonebookpassword$(3)
+print #6, phonebookentry$(4)
+print #6, phonebookusername$(4)
+print #6, phonebookpassword$(4)
+print #6, phonebookentry$(5)
+print #6, phonebookusername$(5)
+print #6, phonebookpassword$(5)
+print #6, phonebookentry$(6)
+print #6, phonebookusername$(6)
+print #6, phonebookpassword$(6)
+print #6, phonebookentry$(7)
+print #6, phonebookusername$(7)
+print #6, phonebookpassword$(7)
+print #6, phonebookentry$(8)
+print #6, phonebookusername$(8)
+print #6, phonebookpassword$(8)
+print #6, phonebookentry$(9)
+print #6, phonebookusername$(9)
+print #6, phonebookpassword$(9)
+print #6, phonebookentry$(10)
+print #6, phonebookusername$(10)
+print #6, phonebookpassword$(10)
+close #6
+
+end sub
 
 
 function getchar$() as string 'magic from Rich Martin
@@ -248,10 +324,10 @@ sub introscreen
   print @((ox+2)*fwidth%,(oy+4)*fheight%) "        for  the";
   print @((ox+2)*fwidth%,(oy+5)*fheight%) "    Color Maximite 2";
   print @((ox+2)*fwidth%,(oy+6)*fheight%) "";
-  print @((ox+2)*fwidth%,(oy+7)*fheight%) "       Version 1.8";
+  print @((ox+2)*fwidth%,(oy+7)*fheight%) "       Version 1.9";
   print @((ox+2)*fwidth%,(oy+8)*fheight%) "           by";
   print @((ox+2)*fwidth%,(oy+9)*fheight%) "       Jay Crutti";
-  print @((ox+2)*fwidth%,(oy+10)*fheight%)"          2020";
+  print @((ox+2)*fwidth%,(oy+10)*fheight%)"          2021";
   print @((ox+2)*fwidth%,(oy+11)*fheight%)"";
   print @((ox+2)*fwidth%,(oy+12)*fheight%)"    www.jaycrutti.com";
 end sub
@@ -460,7 +536,8 @@ sub get_serial_input
 CHARS_IN$ = input$(LOC(#5),#5)
 if onlineflag% = 1 then
   print CHARS_IN$;
-'  play mp3 "sound.mp3"  
+    if soundflag% = 1 AND CHARS_IN$ = chr$(13) then PLAY mp3 "sound.mp3"
+    end if  
 end if
 end sub
 
@@ -590,27 +667,28 @@ sub dialoghelp
   const ox = 30
   const oy = 15
   cls
-  box ox*fwidth%, oy*fheight%, 38*fwidth%, 22*fheight%, 1,,rgb(black)
-  print @((ox+2)*fwidth%,(oy+1)*fheight%) "ALT-B Change COM Port Settings";
-  print @((ox+2)*fwidth%,(oy+2)*fheight%) "ALT-C Clear Screen";
-  print @((ox+2)*fwidth%,(oy+3)*fheight%) "ALT-D List Local Directory";
-  print @((ox+2)*fwidth%,(oy+4)*fheight%) "ALT-E Local Echo on/off";
-  print @((ox+2)*fwidth%,(oy+5)*fheight%) "ALT-F Change the Font Color";
-  print @((ox+2)*fwidth%,(oy+6)*fheight%) "ALT-H Help Menu";
-  print @((ox+2)*fwidth%,(oy+7)*fheight%) "ALT-I Send Modem Initialization";
-  print @((ox+2)*fwidth%,(oy+8)*fheight%) "ALT-L Line Feed TX Setting";
-  print @((ox+2)*fwidth%,(oy+9)*fheight%) "ALT-P Show COM Port Settings";
-  print @((ox+2)*fwidth%,(oy+10)*fheight%)"ALT-Q Quit and Exit Terminal";
-  print @((ox+2)*fwidth%,(oy+11)*fheight%)"ALT-R Reset the Modem";
-  print @((ox+2)*fwidth%,(oy+12)*fheight%)"ALT-S Key Sound on/off";
-  print @((ox+2)*fwidth%,(oy+13)*fheight%)"ALT-T Change Com Port Type";
-  print @((ox+2)*fwidth%,(oy+14)*fheight%)"ALT-X Disconnect Session";
-  print @((ox+2)*fwidth%,(oy+15)*fheight%)"";
-  print @((ox+2)*fwidth%,(oy+16)*fheight%)"Page UP = Upload File";
-  print @((ox+2)*fwidth%,(oy+17)*fheight%)"Page DOWN = Download File";
-  print @((ox+2)*fwidth%,(oy+18)*fheight%)"";
-  print @((ox+2)*fwidth%,(oy+19)*fheight%)"ALT+WIN-D Toggle debug on/off";
-  print @((ox+2)*fwidth%,(oy+20)*fheight%)"ALT+WIN-V Show Version info";
+  box ox*fwidth%, oy*fheight%, 38*fwidth%, 23*fheight%, 1,,rgb(black)
+  print @((ox+2)*fwidth%,(oy+1)*fheight%) "ALT-A Autodial Phone Book";
+  print @((ox+2)*fwidth%,(oy+2)*fheight%) "ALT-B Change COM Port Settings";
+  print @((ox+2)*fwidth%,(oy+3)*fheight%) "ALT-C Clear Screen";
+  print @((ox+2)*fwidth%,(oy+4)*fheight%) "ALT-D List Local Directory";
+  print @((ox+2)*fwidth%,(oy+5)*fheight%) "ALT-E Local Echo on/off";
+  print @((ox+2)*fwidth%,(oy+6)*fheight%) "ALT-F Change the Font Color";
+  print @((ox+2)*fwidth%,(oy+7)*fheight%) "ALT-H Help Menu";
+  print @((ox+2)*fwidth%,(oy+8)*fheight%) "ALT-I Send Modem Initialization";
+  print @((ox+2)*fwidth%,(oy+9)*fheight%) "ALT-L Line Feed TX Setting";
+  print @((ox+2)*fwidth%,(oy+10)*fheight%) "ALT-P Show COM Port Settings";
+  print @((ox+2)*fwidth%,(oy+11)*fheight%)"ALT-Q Quit and Exit Terminal";
+  print @((ox+2)*fwidth%,(oy+12)*fheight%)"ALT-R Reset the Modem";
+  print @((ox+2)*fwidth%,(oy+13)*fheight%)"ALT-S Key Sound on/off";
+  print @((ox+2)*fwidth%,(oy+14)*fheight%)"ALT-T Change Com Port Type";
+  print @((ox+2)*fwidth%,(oy+15)*fheight%)"ALT-X Disconnect Session";
+  print @((ox+2)*fwidth%,(oy+16)*fheight%)"";
+  print @((ox+2)*fwidth%,(oy+17)*fheight%)"Page UP = Upload File";
+  print @((ox+2)*fwidth%,(oy+18)*fheight%)"Page DOWN = Download File";
+  print @((ox+2)*fwidth%,(oy+19)*fheight%)"";
+  print @((ox+2)*fwidth%,(oy+20)*fheight%)"ALT+WIN-D Toggle debug on/off";
+  print @((ox+2)*fwidth%,(oy+21)*fheight%)"ALT+WIN-V Show Version info";
   do while inkey$ = "" : loop
 welcomebanner
 end sub
@@ -622,7 +700,7 @@ sub credits
   box ox*fwidth%, oy*fheight%, 40*fwidth%, 13*fheight%, 1,,rgb(black)
   print @((ox+2)*fwidth%,(oy+1)*fheight%) "Maxiterm for the Color Maximite 2";
   print @((ox+2)*fwidth%,(oy+2)*fheight%) "---------------------------------";
-  print @((ox+2)*fwidth%,(oy+3)*fheight%) "Version 1.8";
+  print @((ox+2)*fwidth%,(oy+3)*fheight%) "Version 1.9";
   print @((ox+2)*fwidth%,(oy+4)*fheight%) "John 'Jay' Crutti Jr. 2020";
   print @((ox+2)*fwidth%,(oy+5)*fheight%) "";
   print @((ox+2)*fwidth%,(oy+6)*fheight%) "";
@@ -635,6 +713,143 @@ sub credits
 welcomebanner
 end sub
 
+
+sub phonebook
+local newphoneentry$
+local newphoneusername$
+local newphonepassword$
+
+  const ox = 3
+  const oy = 3
+  cls
+  box ox*fwidth%, oy*fheight%, 94*fwidth%, 20*fheight%, 1,,rgb(black)
+  print @((ox+2)*fwidth%,(oy+1)*fheight%) "AUTODIAL PHONE BOOK";
+  print @((ox+2)*fwidth%,(oy+2)*fheight%) "-------------------";
+  print @((ox+2)*fwidth%,(oy+3)*fheight%) "HOSTNAME / PHONE NUMBER:                       USERNAME:         PASSWORD:"
+  print @((ox+2)*fwidth%,(oy+4)*fheight%) ""
+  print @((ox+2)*fwidth%,(oy+5)*fheight%) "1.", phonebookentry$(1)
+  print @((ox+47)*fwidth%,(oy+5)*fheight%)"", phonebookusername$(1)
+  print @((ox+66)*fwidth%,(oy+5)*fheight%)"", phonebookpassword$(1)
+  print @((ox+2)*fwidth%,(oy+6)*fheight%) "2.", phonebookentry$(2)
+  print @((ox+47)*fwidth%,(oy+6)*fheight%)"", phonebookusername$(2)
+  print @((ox+66)*fwidth%,(oy+6)*fheight%)"", phonebookpassword$(2)
+  print @((ox+2)*fwidth%,(oy+7)*fheight%) "3.", phonebookentry$(3)
+  print @((ox+47)*fwidth%,(oy+7)*fheight%)"", phonebookusername$(3)
+  print @((ox+66)*fwidth%,(oy+7)*fheight%)"", phonebookpassword$(3)
+  print @((ox+2)*fwidth%,(oy+8)*fheight%) "4.", phonebookentry$(4)
+  print @((ox+47)*fwidth%,(oy+8)*fheight%)"", phonebookusername$(4)
+  print @((ox+66)*fwidth%,(oy+8)*fheight%)"", phonebookpassword$(4)
+  print @((ox+2)*fwidth%,(oy+9)*fheight%) "5.", phonebookentry$(5)
+  print @((ox+47)*fwidth%,(oy+9)*fheight%)"", phonebookusername$(5)
+  print @((ox+66)*fwidth%,(oy+9)*fheight%)"", phonebookpassword$(5)
+  print @((ox+2)*fwidth%,(oy+10)*fheight%)"6.", phonebookentry$(6)
+  print @((ox+47)*fwidth%,(oy+10)*fheight%)"", phonebookusername$(6)
+  print @((ox+66)*fwidth%,(oy+10)*fheight%)"", phonebookpassword$(6)
+  print @((ox+2)*fwidth%,(oy+11)*fheight%)"7.", phonebookentry$(7)
+  print @((ox+47)*fwidth%,(oy+11)*fheight%)"", phonebookusername$(7)
+  print @((ox+66)*fwidth%,(oy+11)*fheight%)"", phonebookpassword$(7)
+  print @((ox+2)*fwidth%,(oy+12)*fheight%)"8.", phonebookentry$(8)
+  print @((ox+47)*fwidth%,(oy+12)*fheight%)"", phonebookusername$(8)
+  print @((ox+66)*fwidth%,(oy+12)*fheight%)"", phonebookpassword$(8)
+  print @((ox+2)*fwidth%,(oy+13)*fheight%)"9.", phonebookentry$(9)
+  print @((ox+47)*fwidth%,(oy+13)*fheight%)"", phonebookusername$(9)
+  print @((ox+66)*fwidth%,(oy+13)*fheight%)"", phonebookpassword$(9)
+  print @((ox+2)*fwidth%,(oy+14)*fheight%)"10.", phonebookentry$(10)
+  print @((ox+47)*fwidth%,(oy+14)*fheight%)"", phonebookusername$(10)
+  print @((ox+66)*fwidth%,(oy+14)*fheight%)"", phonebookpassword$(10)
+  print @((ox+2)*fwidth%,(oy+15)*fheight%)"";
+  print @((ox+2)*fwidth%,(oy+16)*fheight%)"D) or # to Dial. E) to Edit Host/Phone, L) to Edit Login/PW";
+  print @((ox+2)*fwidth%,(oy+17)*fheight%)"C) to Clear an entry, S) to Save the Phonebook, or Enter to Exit.";
+  print @((ox+2)*fwidth%,(oy+18)*fheight%)"Make Selection:"; : input dialchoice$,
+  select case dialchoice$ 
+      case "" 'they hit enter
+        print @(0,420)"Returning to terminal." 'print text below the box
+        pause 1200
+        welcomebanner
+     case "a","b","f" to "k","m" to "r", "t" to "z", "A" to "B","F" to "K", "M" to "R","T" to "Z", "0" 'invalid junk
+        print @(0,420)"Invalid selection."
+        pause 1500
+        phonebook  
+     case "c" 'clear an entry
+        print @(0,420) ""        
+        input "Enter entry to clear: ", phoneentry%
+          if phoneentry% = 1 to 10 then
+            print "Clearing entry"; phoneentry%
+            phonebookentry$(phoneentry%) = ""
+            phonebookusername$(phoneentry%) = ""
+            phonebookpassword$(phoneentry%) = ""
+            pause 1500
+            phonebook
+          end if  
+          if phoneentry% = 0 then ' they hit enter 
+                print "Clearing aborted." 
+                pause 1500
+                phonebook
+          end if
+     case "e" 'edit an entry
+        print @(0,420) ""        
+        input "Enter entry to edit: ", phoneentry%
+          if phoneentry% = 1 to 10 then
+            print "Current hostname / phone number: ";phonebookentry$(phoneentry%)
+            input "Enter new hostname / phone number: ", newphoneentry$
+              if newphoneentry$ <> "" then 
+                print "Changing Entry";phoneentry%; " to "; newphoneentry$ 
+                phonebookentry$(phoneentry%) = newphoneentry$
+                pause 1500
+                phonebook
+              else          
+                print "Not updated." 
+                pause 1500
+                phonebook
+              end if
+          end if
+      case "d"
+        print @(0,420) chr$(10),chr$(13)        
+        input "Entry # to dial: ", phoneentry%
+        print "Dialing entry";phoneentry%;", " phonebookentry$(phoneentry%)
+        print #5; "atdt"; phonebookentry$(phoneentry%)"", chr$(13)
+      case "l" 'edit the login for an entry
+        print @(0,420) ""        
+        input "Enter entry to edit: ", phoneentry%
+          if phoneentry% = 1 to 10 then
+            print "Current Username: ";phonebookusername$(phoneentry%)
+            print "Current Password: ";phonebookpassword$(phoneentry%)
+            input "Enter new Username: ", newphoneusername$
+              if newphoneusername$ <> "" then 
+                print "Changing Username";phonebookusername$(phoneentry%); " to "; newphoneusername$ 
+                phonebookusername$(phoneentry%) = newphoneusername$
+                pause 1500
+              else          
+                print "Not updated." 
+                pause 1500
+                phonebook
+              end if
+            print chr$(10), chr$(13)
+            input "Enter new Password: ", newphonepassword$
+              if newphonpassword$ <> "" then 
+                print "Changing Password";phonebookpassword$(phoneentry%); " to "; newphonepassword$ 
+                phonebookpassword$(phoneentry%) = newphonepassword$
+                pause 1500
+                phonebook
+              else          
+                print "Not updated." 
+                pause 1500
+                phonebook
+              end if
+            
+          end if
+
+      case "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"
+        phoneentry% = val(dialchoice$)
+        print @(0,420) "Dialing entry ";dialchoice$;", " phonebookentry$(phoneentry%)
+        print #5; "atdt"; phonebookentry$(phoneentry%)"", chr$(13)
+      case "s" 'save updated phone book to config file
+        print @(0,420) "Phonebook Saved."
+        savephonebook
+        pause 1500
+        phonebook
+      end select  
+end sub
 
 
 sub blinkcursor 'future feature
