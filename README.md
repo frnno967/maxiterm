@@ -5,8 +5,7 @@ Maxiterm is a communications terminal program for enabling the Colour Maximite 2
 
 It features:
 
-File transfer support
-Selectable font colors (White, Amber, Green) matching famous vintage terminals
+File transfer support Selectable font colors (White, Amber, Green) matching famous vintage terminals
 Autodialer phone book
 ASCII text rendering
 Retro text effect sounds
