@@ -280,7 +280,6 @@ print #6, phonebookentry$(10)
 print #6, phonebookusername$(10)
 print #6, phonebookpassword$(10)
 close #6
-
 end sub
 
 
@@ -836,9 +835,7 @@ local newphonepassword$
                 pause 1500
                 phonebook
               end if
-            
           end if
-
       case "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"
         phoneentry% = val(dialchoice$)
         print @(0,420) "Dialing entry ";dialchoice$;", " phonebookentry$(phoneentry%)
