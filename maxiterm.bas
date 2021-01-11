@@ -25,8 +25,8 @@ dim NameOfFile$(1)  ' place to put chosen filename string, goes in element 0
 
 dim comportnum% = 1 ' COM port number as an integer for COM Port subroutine.
 dim comportstr$ = "COM1" ' COM port as a string for COM Port subroutine.
-dim comchoice% = 1 ' used in COM selection subroutine.
-dim comspeedchoice% = 9 ' used in COM Speed selection subroutine.
+dim comchoice$ = "1" ' used in COM selection subroutine.
+dim comspeedchoice$ = "9" ' used in COM Speed selection subroutine.
 dim comspeed$ = "115200" ' COM Speed as a string for COM Speed subroutine.
 dim rs232% = 0
 dim CHAR_OUT$ 'characters we're typing at the console to be sent to modem
@@ -339,50 +339,56 @@ end sub
 
 
 sub pickcolor
+local textchoice$
 print ""
-input "Which color do you want 1.White [DEFAULT], 2.Amber, or 3.Green "; text_color
-  if text_color = 0 then
-    text_color = 1
-    setupcolor
+input "Which color do you want 1.White [DEFAULT], 2.Amber, or 3.Green "; textchoice$
+select case textchoice$
+  case "" ' hitting enter
+    text_color = 1 : setupcolor
     print "White Selected."
-  elseif text_color = 1 then
-    setupcolor
+  case "1"
+    text_color = 1 : setupcolor
     print "White Selected."
-  elseif text_color = 2 then
-    setupcolor
+  case "2" 
+    text_color = 2 : setupcolor
     print "Amber Selected."
-  elseif text_color = 3 then
-    setupcolor
+  case "3"
+    text_color = 3 : setupcolor
     print "Green Selected."
-  elseif text_color <> 0 to 3 then
+  case else
     print "Invalid Selection, please try again."
     pickcolor
-  end if
+end select
 end sub
 
 
 
 
 sub changelinefeeds
+local lfchoice$
 cls
 print ""
 print "Send Line Feeds after Carriage Return?"
 print "1.No [DEFAULT]"
 print "2.Yes"
-input "Make Selection;"; linefeeds%
-  if linefeeds% = 0 then '0 is value of hitting enter or invalid data
+input "Make Selection;"; lfchoice$
+select case lfchoice$
+  case "" ' hitting enter
+    linefeeds% = 0 
     print "Line Feeds will not be sent."
-  elseif linefeeds% = 1 then
+  case "1"
     linefeeds% = 0
     print "Line Feeds will not be sent."
-  elseif linefeeds% = 2 then
-    print "Line Feeds will be sent."
+  case "2"
     linefeeds% = 1
-  elseif linefeeds% <> 0 to 2 then
+    print "Line Feeds will be sent."
+  case else
     print "Invalid Selection, please try again."
     pause 1200
     changelinefeeds
-  end if
+end select
+pause 1500
+welcomebanner
 end sub
 
 
@@ -390,29 +396,29 @@ end sub
 
 sub setcomport
 print ""
-input "Choose COM Port, COM 1 [DEFAULT], 2, or 3 "; comchoice%
-  if  comchoice% = 0 then 'hitting enter
+input "Choose COM Port, COM 1 [DEFAULT], 2, or 3 "; comchoice$
+select case comchoice$
+  case "" 'hitting enter
       comportstr$ = "COM1"
       comportnum% = 1
       print "COM1 Selected."
-  elseif  comchoice% = 1 then
-      comportstr$ = "COM1"
-      comportnum% = 1
-  elseif  comchoice% = 2 then 
-      comportstr$ = "COM2"
-      comportnum% = 2
-  elseif  comchoice% = 3 then
-      comportstr$ = "COM3"
-      comportnum% = 3
+  case "1"
+    comportstr$ = "COM1" : comportnum% = 1
+    print "COM1 Selected."
+  case "2" 
+    comportstr$ = "COM2" : comportnum% = 2
+    print "COM2 Selected."
+  case "3"
+      comportstr$ = "COM3" : comportnum% = 3
       print "COM3 (via USB Type B port) Selected."
         if mm.errno <> 0 then 
         Print "Error: ";mm.errmsg$,
       end if
-  elseif  comchoice% <> 0 to 3 then 'invalid input
+  case else 'invalid input
       print "Invalid COM port, please try again."
       pause 1200 ' wait for them to read the response
       setcomport ' start over
-  end if
+end select
 end sub
 
 
@@ -444,6 +450,7 @@ end sub
 
 
 sub setcomspeed
+onlineflag% = 0 'disable so incoming data doesn't disturb our decision
 print ""
 print "Select COM Port Speed"
 print "1) 1200 BPS" 'CMM2 doesn't support 300 baud.
@@ -454,52 +461,51 @@ print "5) 19200 BPS"
 print "6) 38400 BPS"
 print "7) 57600 BPS"
 print "8) 115200 BPS [DEFAULT]"
-input "Make Selection: ", comspeedchoice%
-  if comspeedchoice% = 0 then
-    print "115200 Selected."
-      comspeed$ = "115200"
-  elseif comspeedchoice% > 8 then
-    print "Invalid selection. Please try again."
-    pause 1200  
-    setcomspeed
-  elseif comspeedchoice% = 1 then
-    comspeed$ = "1200"
-  elseif comspeedchoice% = 2 then
-    comspeed$ = "2400"
-  elseif comspeedchoice% = 3 then
-    comspeed$ = "4800"
-  elseif comspeedchoice% = 4 then
-    comspeed$ = "9600"
-  elseif comspeedchoice% = 5 then
-    comspeed$ = "19200"
-  elseif comspeedchoice% = 6 then
-    comspeed$ = "38400"
-  elseif comspeedchoice% = 7 then
-    comspeed$ = "57600"
-  elseif comspeedchoice% = 8 then
-    comspeed$ = "115200"
-end if
-onlineflag% = 1
+input "Make Selection: ", comspeedchoice$
+  select case comspeedchoice$
+    case ""
+      print "115200 Selected." : comspeed$ = "115200"
+    case "1"
+      print "1200 Selected." : comspeed$ = "1200"
+    case "2"
+      print "2400 Selected." : comspeed$ = "2400"
+    case "3"
+      print "4800 Selected." : comspeed$ = "4800"
+    case "4"
+      print "9600 Selected." : comspeed$ = "9600"
+    case "5"
+      print "19200 Selected." : comspeed$ = "19200"
+    case "6"
+      print "38400 Selected." : comspeed$ = "38400"
+    case "7"
+      print "57600 Selected." : comspeed$ = "57600"
+    case "8"
+      print "115200 Selected." : comspeed$ = "115200"
+    case else
+      print "Invalid selection. Please try again."
+      pause 1200  
+      setcomspeed
+  end select
+onlineflag% = 1 'enable so we're back online
 end sub
 
 
 
 sub setupcolor
-if TEXT_COLOR = 1 then 
+select case TEXT_COLOR
+  case 1 
 TERM_COLOR1 = 255
 TERM_COLOR2 = 255
 TERM_COLOR3 = 255
-end if
-if TEXT_COLOR = 2 then
+  case 2
 TERM_COLOR1 = 255
 TERM_COLOR2 = 176
 TERM_COLOR3 = 0
-end if
-if TEXT_COLOR = 3 then
+  case 3
 TERM_COLOR1 = 51
 TERM_COLOR2 = 255
 TERM_COLOR3 = 0
-end if 
+end select
 colour rgb(TERM_COLOR1,TERM_COLOR2,TERM_COLOR3), rgb(black)
 end sub
 
@@ -696,18 +702,19 @@ sub credits
   const ox = 30
   const oy = 15
   cls
-  box ox*fwidth%, oy*fheight%, 40*fwidth%, 13*fheight%, 1,,rgb(black)
+  box ox*fwidth%, oy*fheight%, 40*fwidth%, 14*fheight%, 1,,rgb(black)
   print @((ox+2)*fwidth%,(oy+1)*fheight%) "Maxiterm for the Color Maximite 2";
   print @((ox+2)*fwidth%,(oy+2)*fheight%) "---------------------------------";
   print @((ox+2)*fwidth%,(oy+3)*fheight%) "Version 1.9";
-  print @((ox+2)*fwidth%,(oy+4)*fheight%) "John 'Jay' Crutti Jr. 2020";
-  print @((ox+2)*fwidth%,(oy+5)*fheight%) "";
+  print @((ox+2)*fwidth%,(oy+4)*fheight%) "John 'Jay' Crutti Jr. and friends. ";
+  print @((ox+2)*fwidth%,(oy+5)*fheight%) "Copyright 2021, MIT LICENSE";
   print @((ox+2)*fwidth%,(oy+6)*fheight%) "";
   print @((ox+2)*fwidth%,(oy+7)*fheight%) "Special thanks to Rich Martin,";
-  print @((ox+2)*fwidth%,(oy+8)*fheight%) "Robert Severson, Piotr Siwy, and";
-  print @((ox+2)*fwidth%,(oy+9)*fheight%) "vegipete from The Back Shed for";
-  print @((ox+2)*fwidth%,(oy+10)*fheight%)"code, support, and inspiration.";
-  print @((ox+2)*fwidth%,(oy+11)*fheight%)"Support email: recstudio@gmail.com";
+  print @((ox+2)*fwidth%,(oy+8)*fheight%) "Robert Severson, Piotr Siwy, vegipete";
+  print @((ox+2)*fwidth%,(oy+9)*fheight%) "Dave Van Wagner, TassyJim, the";
+  print @((ox+2)*fwidth%,(oy+10)*fheight%)"Back Shed users, and the 1980's for";
+  print @((ox+2)*fwidth%,(oy+11)*fheight%)"code, support, and inspiration.";
+  print @((ox+2)*fwidth%,(oy+12)*fheight%)"Support email: recstudio@gmail.com";
   do while inkey$ = "" : loop
 welcomebanner
 end sub
@@ -765,10 +772,6 @@ local newphonepassword$
         print @(0,420)"Returning to terminal." 'print text below the box
         pause 1200
         welcomebanner
-     case "a","b","f" to "k","m" to "r", "t" to "z", "A" to "B","F" to "K", "M" to "R","T" to "Z", "0" 'invalid junk
-        print @(0,420)"Invalid selection."
-        pause 1500
-        phonebook  
      case "c" 'clear an entry
         print @(0,420) ""        
         input "Enter entry to clear: ", phoneentry%
@@ -845,6 +848,10 @@ local newphonepassword$
         savephonebook
         pause 1500
         phonebook
+      case else 'invalid junk
+        print @(0,420)"Invalid selection."
+        pause 1500
+        phonebook  
       end select  
 end sub
 
