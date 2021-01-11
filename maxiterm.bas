@@ -855,8 +855,8 @@ sub blinkcursor 'future feature
   y% = ypos%
 '  select case cursortype%
 '  case 0
-    print @((x%+xoffset%)*fwidth%,(y%+yoffset%)*fheight%) " ";
-    print @((x%+xoffset%)*fwidth%,(y%+yoffset%)*fheight%) "_";
+'    print @((x%+xoffset%)*fwidth%,(y%+yoffset%)*fheight%) " ";
+'    print @((x%+xoffset%)*fwidth%,(y%+yoffset%)*fheight%) "_";
 '  case 1
 '    print @((x%+xoffset%)*fwidth%,(y%+yoffset%)*fheight%) "/";
 '    print @((x%+xoffset%)*fwidth%,(y%+yoffset%)*fheight%) "-";
@@ -872,8 +872,7 @@ sub blinkcursor 'future feature
 '    print @((x%+xoffset%)*fwidth%,(y%+yoffset%)*fheight%) "v";
 '  end select
 '  print @((x%+xoffset%)*fwidth%,(y%+yoffset%)*fheight%) scr_text$(x%,y%);
-
-  print @((x%+xoffset%)*fwidth%,(y%+yoffset%)*fheight%) CHARS_OUT$(x%,y%);
+'  print @((x%+xoffset%)*fwidth%,(y%+yoffset%)*fheight%) CHARS_OUT$(x%,y%);
 end sub
 
 
@@ -1189,21 +1188,16 @@ DefineFont #11
   FFC1FFFF 000000F0 00000000
 End DefineFont
 '*****************************************************************
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                                                                
+                                                                
+                                                                
+                                                                
+                                                                
+                                                                
+                                                                
+                                                                
+                                                                
+                                                                
+                                                                
+                                                                
+                                                                
