@@ -1,19 +1,17 @@
-New feature ideas:
-Software Routines for File Transfer support, Xmodem-Ymodem-Zmodem
-ANSI support
-Transfer progress window 
-Options other than 8-N-1
-Flow Control (RTS/CTS & Xon/Xoff) support
+Planned features:
+Software Routines for Xmodem-Ymodem-Zmodem File Transfer support, transfer progress windows
+ANSI color support
+RS-232 options other than 8-N-1, Flow Control (RTS/CTS & Xon/Xoff) support
 Visible Cursor support
-Ability to change sound of keypress sound mode. 
-Saving/Recall of ALL configuration parameters
-Ability to modify options on Comm Parameters screen
+Ability to change sound of keypress sound mode
+Saving/Recall of ALL configuration parameters (queued for v2)
+Ability to modify options on Comm Parameters screen (queued for v2)
 Correct operation of Backspace erasing the existing text
-Concurrent output to log file
+Optional concurrent output to log file
 More fully featured ALT-D / Drive operations
-Color intro title card screen, once ANSI support is in place
+Color intro title card screen
 Different font/type options
 Archiving/Unarchiving for file transfers from within the program
 
 Bugs:
-Current (v1.8) Xmodem firmware routines are unstable for uploading
+Current (v1.9) Xmodem firmware routines are unstable for uploading except using COM3 or RS-232 serial connection.
