@@ -1,10 +1,36 @@
 v1.9:
--New autodialer / phone book feature  using ALT-A. Saves phonebook to bbslist.cfg file. Username and passwords are saved but not used for anything.
+-New autodialer / phone book feature using ALT-A. Saves phonebook to bbslist.cfg file. Username and passwords are saved but not used for anything.
 -New "Wargames" sound for incoming CR.
 
 v1.8:
--RS-232 Port options
--COM 3 support
--Fixed bug "Hitting Enter on font selection prompt reset color to White".
+-RS-232 Port options in addition to TTL defaults
+-COM 3 (USB Port) support
+-Fixed bug "Hitting Enter on font selection prompt reset color to White."
 
+v1.7:
+-added CRLF TX support. Default remains CR.
+-ability to change COM port settings after program start
+-fixed various informational messages
 
+v1.6:
+-list files on the SD card
+-ability to use firmware routines for upload & download
+-upload file dialog using vegipete's getfile program
+-COM port settings display window
+
+v1.5:
+-ability change the font color
+-clear screen command
+-ALT commands for modem reset & initialize & hangup/disconnect
+-true local echo support
+
+v1.4:
+-change the terminal exit key combination to ALT-Q
+-informational status messages
+-setting com port on startup
+-changed graphical startup to text box
+
+v1.3 and lower:
+-help menu
+-integrating code and ideas from esp8266lib, flashback terminal, and Rich Martin's sample code
+-changed the name to Maxiterm
