@@ -1,0 +1,9 @@
+v1.9:
+-New autodialer / phone book feature  using ALT-A. Saves phonebook to bbslist.cfg file. Username and passwords are saved but not used for anything.
+-New "Wargames" sound for incoming CR.
+
+v1.8:
+-RS-232 Port options
+-Fixed bug "Hitting Enter on font selection prompt reset color to White".
+
+
