@@ -1,6 +1,7 @@
 v1.9:
 -New autodialer / phone book feature using ALT-A. Saves phonebook to bbslist.cfg file. Username and passwords are saved but not used for anything.
 -New "Wargames" sound for incoming CR.
+-refactored code to use arrays and select case more often.
 
 v1.8:
 -RS-232 Port options in addition to TTL defaults
