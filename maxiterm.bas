@@ -28,13 +28,15 @@ dim comportstr$ = "COM1" ' COM port as a string for COM Port subroutine.
 dim comchoice$ = "1" ' used in COM selection subroutine.
 dim comspeedchoice$ = "9" ' used in COM Speed selection subroutine.
 dim comspeed$ = "115200" ' COM Speed as a string for COM Speed subroutine.
-dim rs232% = 0
+dim rs232% = 0 'start with TTL type serial port
+dim comporttype$ = "TTL Serial"
 dim CHAR_OUT$ 'characters we're typing at the console to be sent to modem
 dim altflag% 'is ALT key pressed?
 dim winflag% 'is WINDOWS key pressed?
 dim CHARS_IN$ 'characters being received from the modem
 dim echo% = 0 'is local echo enabled?
 dim linefeeds% = 0 'setting of line feeds to be sent to modem after every CR
+dim linefeedstate$ = "LF Off"
 dim width%
 dim height%
 dim onlineflag% = 1 'set to 1 if currently printing serial data to the screen
@@ -71,6 +73,7 @@ introscreen 'show the title screen when launched
 pause 2500
 cls
 loadphonebook 'load phone book, if exists
+loadconfig
 welcomebanner 'banner at top of terminal screen showing help and exit commands
 setcomport 'set the COM port you want to use 1 or 2
 setcomspeed 'choose the speed of the COM port
@@ -131,8 +134,8 @@ if CHAR_OUT$ <> "" then
         print "*** SENDING MODEM INITIALIZATION ***"
         setupcolor
         modeminit
-      case "l" ' show local file system
-        changelinefeeds
+      case "l" ' change the line feed TX setting
+        cls : changelinefeeds : welcomebanner
       case "x" 'hangup the modem/close the connection
         echo% = 0
         hangup
@@ -211,74 +214,61 @@ end if
 loop
 end
 
+sub loadconfig
+open "settings.cfg" for input as #7
+line input #7, comporttype$
+line input #7, linefeedstate$
+line input #7, modeminitstring$
+close #7
+  if comporttype$ = "RS-232 Serial" then
+    rs232% = 1
+  else
+    rs232% = 0
+  end if
+  if linefeedstate$ = "LF On" then
+    linefeeds% = 1
+  else
+    linefeeds% = 0
+  end if
+end sub
+
+sub saveconfig
+open "settings.cfg" for output as #7
+print #7, comporttype$
+print #7, linefeedstate$
+print #7, modeminitstring$
+close #7
+end sub
+
+
 
 sub loadphonebook
 open "bbslist.cfg" for input as #6
-line input #6, phonebookentry$(1)
-line input #6, phonebookusername$(1)
-line input #6, phonebookpassword$(1)
-line input #6, phonebookentry$(2)
-line input #6, phonebookusername$(2)
-line input #6, phonebookpassword$(2)
-line input #6, phonebookentry$(3)
-line input #6, phonebookusername$(3)
-line input #6, phonebookpassword$(3)
-line input #6, phonebookentry$(4)
-line input #6, phonebookusername$(4)
-line input #6, phonebookpassword$(4)
-line input #6, phonebookentry$(5)
-line input #6, phonebookusername$(5)
-line input #6, phonebookpassword$(5)
-line input #6, phonebookentry$(6)
-line input #6, phonebookusername$(6)
-line input #6, phonebookpassword$(6)
-line input #6, phonebookentry$(7)
-line input #6, phonebookusername$(7)
-line input #6, phonebookpassword$(7)
-line input #6, phonebookentry$(8)
-line input #6, phonebookusername$(8)
-line input #6, phonebookpassword$(8)
-line input #6, phonebookentry$(9)
-line input #6, phonebookusername$(9)
-line input #6, phonebookpassword$(9)
-line input #6, phonebookentry$(10)
-line input #6, phonebookusername$(10)
-line input #6, phonebookpassword$(10)
+line input #6, phonebookentry$(1):line input #6, phonebookusername$(1):line input #6, phonebookpassword$(1)
+line input #6, phonebookentry$(2):line input #6, phonebookusername$(2):line input #6, phonebookpassword$(2)
+line input #6, phonebookentry$(3):line input #6, phonebookusername$(3):line input #6, phonebookpassword$(3)
+line input #6, phonebookentry$(4):line input #6, phonebookusername$(4):line input #6, phonebookpassword$(4)
+line input #6, phonebookentry$(5):line input #6, phonebookusername$(5):line input #6, phonebookpassword$(5)
+line input #6, phonebookentry$(6):line input #6, phonebookusername$(6):line input #6, phonebookpassword$(6)
+line input #6, phonebookentry$(7):line input #6, phonebookusername$(7):line input #6, phonebookpassword$(7)
+line input #6, phonebookentry$(8):line input #6, phonebookusername$(8):line input #6, phonebookpassword$(8)
+line input #6, phonebookentry$(9):line input #6, phonebookusername$(9):line input #6, phonebookpassword$(9)
+line input #6, phonebookentry$(10):line input #6, phonebookusername$(10):line input #6, phonebookpassword$(10)
 close #6
 end sub
 
 sub savephonebook
 open "bbslist.cfg" for output as #6
-print #6, phonebookentry$(1)
-print #6, phonebookusername$(1)
-print #6, phonebookpassword$(1)
-print #6, phonebookentry$(2)
-print #6, phonebookusername$(2)
-print #6, phonebookpassword$(2)
-print #6, phonebookentry$(3)
-print #6, phonebookusername$(3)
-print #6, phonebookpassword$(3)
-print #6, phonebookentry$(4)
-print #6, phonebookusername$(4)
-print #6, phonebookpassword$(4)
-print #6, phonebookentry$(5)
-print #6, phonebookusername$(5)
-print #6, phonebookpassword$(5)
-print #6, phonebookentry$(6)
-print #6, phonebookusername$(6)
-print #6, phonebookpassword$(6)
-print #6, phonebookentry$(7)
-print #6, phonebookusername$(7)
-print #6, phonebookpassword$(7)
-print #6, phonebookentry$(8)
-print #6, phonebookusername$(8)
-print #6, phonebookpassword$(8)
-print #6, phonebookentry$(9)
-print #6, phonebookusername$(9)
-print #6, phonebookpassword$(9)
-print #6, phonebookentry$(10)
-print #6, phonebookusername$(10)
-print #6, phonebookpassword$(10)
+print #6, phonebookentry$(1):print #6, phonebookusername$(1):print #6, phonebookpassword$(1)
+print #6, phonebookentry$(2):print #6, phonebookusername$(2):print #6, phonebookpassword$(2)
+print #6, phonebookentry$(3):print #6, phonebookusername$(3):print #6, phonebookpassword$(3)
+print #6, phonebookentry$(4):print #6, phonebookusername$(4):print #6, phonebookpassword$(4)
+print #6, phonebookentry$(5):print #6, phonebookusername$(5):print #6, phonebookpassword$(5)
+print #6, phonebookentry$(6):print #6, phonebookusername$(6):print #6, phonebookpassword$(6)
+print #6, phonebookentry$(7):print #6, phonebookusername$(7):print #6, phonebookpassword$(7)
+print #6, phonebookentry$(8):print #6, phonebookusername$(8):print #6, phonebookpassword$(8)
+print #6, phonebookentry$(9):print #6, phonebookusername$(9):print #6, phonebookpassword$(9)
+print #6, phonebookentry$(10):print #6, phonebookusername$(10):print #6, phonebookpassword$(10)
 close #6
 end sub
 
@@ -366,7 +356,6 @@ end sub
 
 sub changelinefeeds
 local lfchoice$
-cls
 print ""
 print "Send Line Feeds after Carriage Return?"
 print "1.No [DEFAULT]"
@@ -375,20 +364,22 @@ input "Make Selection;"; lfchoice$
 select case lfchoice$
   case "" ' hitting enter
     linefeeds% = 0 
+    linefeedstate$ = "LF Off"
     print "Line Feeds will not be sent."
   case "1"
     linefeeds% = 0
+    linefeedstate$ = "LF Off"
     print "Line Feeds will not be sent."
   case "2"
     linefeeds% = 1
+    linefeedstate$ = "LF On"
     print "Line Feeds will be sent."
   case else
     print "Invalid Selection, please try again."
     pause 1200
     changelinefeeds
 end select
-pause 1500
-welcomebanner
+pause 1200
 end sub
 
 
@@ -419,31 +410,39 @@ select case comchoice$
       pause 1200 ' wait for them to read the response
       setcomport ' start over
 end select
+startcomport
 end sub
 
 
 
 
 sub setcomtype
+local comtype$
 cls
 print ""
 print "Select COM Port Type"
 print "1) TTL Serial [DEFAULT]"
 print "2) RS-232 Serial"
-input "Make Selection: ", rs232%
-  if  rs232% = 0 then
-    print "TTL Serial Selected."
-  elseif rs232% = 1 then
+input "Make Selection: ", comtype$
+select case comtype$
+  case "" 'hitting enter
     rs232% = 0 ' 0 means TTL
+    comporttype$ = "TTL Serial" 'this string is important for the settings.cfg file!
+    print "TTL Serial Selected."
+  case "1" 
+    rs232% = 0
+    comporttype$ = "TTL Serial"
     print "TTL Serial Selected." 
-  elseif rs232% = 2 then
+  case "2"
     rs232% = 1 ' 1 is INVerted RS232 levels
+    comporttype$ = "RS-232 Serial"
     print "RS-232 Serial Selected." 
-  elseif rs232% <> 0 to 2 then
+  case else
     print "Invalid selection, please try again."
-    pause 1500
-     setcomtype
-  end if
+    pause 1200
+    setcomtype
+end select
+startcomport
 end sub
 
 
@@ -643,28 +642,76 @@ exit
 end sub
 
 
+sub changeinitstring
+local newinitstring$
+        print @(0,420) ""        
+            print "Current modem initialization string: ";modeminitstring$
+            input "Enter new modem initialization string: ", newinitstring$
+              if newinitstring$ <> "" then 
+                print "Changing modem initializatin string to "; newinitstring$ 
+                modeminitstring$ = newinitstring$
+                pause 1500
+              else          
+                print "Not updated." 
+                pause 1500
+              end if
+end sub
+
+
+
 sub comsettings
+local comwindow$
   const ox = 20
   const oy = 15
   cls
-  box ox*fwidth%, oy*fheight%, 60*fwidth%, 15*fheight%, 1,,rgb(black)
+  box ox*fwidth%, oy*fheight%, 60*fwidth%, 16*fheight%, 1,,rgb(black)
   print @((ox+2)*fwidth%,(oy+1)*fheight%) "CURRENT COM PORT SETTINGS";
   print @((ox+2)*fwidth%,(oy+2)*fheight%) "-------------------------";
   print @((ox+2)*fwidth%,(oy+3)*fheight%) "A.COM PORT                :",comportstr$
   print @((ox+2)*fwidth%,(oy+4)*fheight%) "B.BAUD RATE               :",comspeed$
-  print @((ox+2)*fwidth%,(oy+5)*fheight%) "C.COM PORT TYPE           :", 
-    if rs232% = 0 then print "TTL Serial" else print "RS-232 Serial" endif
+  print @((ox+2)*fwidth%,(oy+5)*fheight%) "C.COM PORT TYPE           :",comporttype$ 
   print @((ox+2)*fwidth%,(oy+6)*fheight%) "D.DATA BITS               : 8";
   print @((ox+2)*fwidth%,(oy+7)*fheight%) "E.PARITY                  : NONE";
   print @((ox+2)*fwidth%,(oy+8)*fheight%) "F.FLOW CONTROL            : (NOT IMPLEMENTED)";
   print @((ox+2)*fwidth%,(oy+9)*fheight%) "G.STOP BITS               : 1";
-  print @((ox+2)*fwidth%,(oy+10)*fheight%)"H.SEND LINE FEED AFTER CR :",
-    if linefeeds% = 1 then print "LF On" else print "LF Off" endif
+  print @((ox+2)*fwidth%,(oy+10)*fheight%)"H.SEND LINE FEED AFTER CR :",linefeedstate$
   print @((ox+2)*fwidth%,(oy+11)*fheight%)"I.INIT STRING             :",modeminitstring$
   print @((ox+2)*fwidth%,(oy+12)*fheight%)"";
-  print @((ox+2)*fwidth%,(oy+13)*fheight%)"To change settings, see Help Screen Commands.";
-  do while inkey$ = "" : loop
-welcomebanner
+  print @((ox+2)*fwidth%,(oy+13)*fheight%)"To change settings, enter letter or hit enter to exit.";
+  print @((ox+2)*fwidth%,(oy+14)*fheight%)"Enter S) to save. Make Selection"; : input comwindow$,
+select case comwindow$
+  case "" ' they hit enter
+    print @(0,420) "Returning to terminal."
+    pause 1200 : welcomebanner
+  case "a", "A"
+    print chr$(10),chr$(13)
+    setcomport : pause 1200 : comsettings
+  case "b", "B"
+    setcomspeed : pause 1200 : comsettings
+  case "c", "C"
+    setcomtype : pause 1200 : comsettings
+  case "d", "D"
+    print @(0,420) "Option not implemented yet."
+    pause 1500 : comsettings
+  case "e", "E"
+    print @(0,420) "Option not implemented yet."
+    pause 1500 : comsettings
+  case "f", "F"
+    print @(0,420) "Option not implemented yet."
+    pause 1500 : comsettings
+  case "g", "G"
+    print @(0,420) "Option not implemented yet."
+    pause 1500 : comsettings
+  case "h", "H"
+    print chr$(10),chr$(13) : changelinefeeds : pause 1200 : comsettings
+  case "i", "I"
+    changeinitstring : pause 1200 : comsettings
+  case "s", "S"
+    print @(0,420) "Saving Configuration to settings.cfg"
+    saveconfig : pause 1500 : comsettings
+  case else
+    print @(0,420) "Invalid option. Try again." : pause 1500 : comsettings
+end select
 end sub
 
 
@@ -682,7 +729,7 @@ sub dialoghelp
   print @((ox+2)*fwidth%,(oy+7)*fheight%) "ALT-H Help Menu";
   print @((ox+2)*fwidth%,(oy+8)*fheight%) "ALT-I Send Modem Initialization";
   print @((ox+2)*fwidth%,(oy+9)*fheight%) "ALT-L Line Feed TX Setting";
-  print @((ox+2)*fwidth%,(oy+10)*fheight%) "ALT-P Show COM Port Settings";
+  print @((ox+2)*fwidth%,(oy+10)*fheight%)"ALT-P Show COM Port Settings";
   print @((ox+2)*fwidth%,(oy+11)*fheight%)"ALT-Q Quit and Exit Terminal";
   print @((ox+2)*fwidth%,(oy+12)*fheight%)"ALT-R Reset the Modem";
   print @((ox+2)*fwidth%,(oy+13)*fheight%)"ALT-S Key Sound on/off";
@@ -702,7 +749,7 @@ sub credits
   const ox = 30
   const oy = 15
   cls
-  box ox*fwidth%, oy*fheight%, 40*fwidth%, 14*fheight%, 1,,rgb(black)
+  box ox*fwidth%, oy*fheight%, 40*fwidth%, 15*fheight%, 1,,rgb(black)
   print @((ox+2)*fwidth%,(oy+1)*fheight%) "Maxiterm for the Color Maximite 2";
   print @((ox+2)*fwidth%,(oy+2)*fheight%) "---------------------------------";
   print @((ox+2)*fwidth%,(oy+3)*fheight%) "Version 1.9";
@@ -714,7 +761,8 @@ sub credits
   print @((ox+2)*fwidth%,(oy+9)*fheight%) "Dave Van Wagner, TassyJim, the";
   print @((ox+2)*fwidth%,(oy+10)*fheight%)"Back Shed users, and the 1980's for";
   print @((ox+2)*fwidth%,(oy+11)*fheight%)"code, support, and inspiration.";
-  print @((ox+2)*fwidth%,(oy+12)*fheight%)"Support email: recstudio@gmail.com";
+  print @((ox+2)*fwidth%,(oy+12)*fheight%)"";
+  print @((ox+2)*fwidth%,(oy+13)*fheight%)"Support email: recstudio@gmail.com";
   do while inkey$ = "" : loop
 welcomebanner
 end sub
