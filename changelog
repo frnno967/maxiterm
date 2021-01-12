@@ -3,7 +3,8 @@ v1.9:
 -New "Wargames" sound for incoming CR.
 -refactored code to use arrays and select case more often.
 -Can now change configuration options from the ALT-P port settings window, and save the modem init string, 
- Line Feed TX, and COM Port type configuration in settings.cfg file. 
+ Line Feed TX, and COM Port type configuration in settings.cfg file. If phonebook or settings files are missing at startup then program will use default values of
+ TTL Serial, No Line Feed TX, and a long modem init string. If file is present then user values will be loaded.
 
 v1.8:
 -RS-232 Port options in addition to TTL defaults
