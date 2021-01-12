@@ -5,7 +5,6 @@ RS-232 options other than 8-N-1, Flow Control (RTS/CTS & Xon/Xoff) support
 Visible Cursor support
 Ability to change sound of keypress sound mode
 Saving/Recall of ALL configuration parameters (queued for v2)
-Ability to modify options on Comm Parameters screen (queued for v2)
 Correct operation of Backspace erasing the existing text
 Optional concurrent output to log file
 More fully featured ALT-D / Drive operations
