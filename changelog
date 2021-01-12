@@ -2,6 +2,8 @@ v1.9:
 -New autodialer / phone book feature using ALT-A. Saves phonebook to bbslist.cfg file. Username and passwords are saved but not used for anything.
 -New "Wargames" sound for incoming CR.
 -refactored code to use arrays and select case more often.
+-Can now change configuration options from the ALT-P port settings window, and save the modem init string, 
+ Line Feed TX, and COM Port type configuration in settings.cfg file. 
 
 v1.8:
 -RS-232 Port options in addition to TTL defaults
