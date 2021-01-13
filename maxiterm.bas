@@ -4,6 +4,20 @@
 'Version 1.9.2 John Crutti Jr 3-6-2021
 
 OPTION EXPLICIT
+
+_xmodem_dim
+
+'commented code for bare bones with xmodem dumb terminal testing (COM3 only)
+'dim debug%:debug%=0
+'_cursor_dim
+'_cursor_enable
+'cursor_mode = 2 ' 1=double height underline, 2=reverse cell
+'open "com3:115200,8192,_serial_read" as #5 ' open serial
+'xmodem_up$="FILE.SND"
+'xmodem_down$="FILE.RCV"
+'_dumb_terminal
+'end
+
 ON ERROR IGNORE
 OPTION CRLF CRLF
 OPTION CONSOLE SCREEN
@@ -121,7 +135,7 @@ feature$ = getchar$()'typing processed by getchar routine to watch for modifier 
         pause 750 : welcomebanner      
       case "d" ' Not implemented yet.
         if winflag% = 1 then
-          if debug% = 0 then 
+          if debug% = 0 then
             colour rgb(black), rgb(red)
             print "*** Debug Mode On *** (NOT IMPLEMENTED)"
           setupcolor : debug% = 1
@@ -196,11 +210,11 @@ feature$ = getchar$()'typing processed by getchar routine to watch for modifier 
     end select
   else  
 print #5, CHAR_OUT$;
-      if linefeeds% = 1 and CHAR_OUT$ = chr$(13) then    
+      if linefeeds% = 1 and CHAR_OUT$ = chr$(13) then
         print #5, ""
       end if
 end if
-  if echo% = 1 and CHAR_OUT$ <> "" then    
+  if echo% = 1 and CHAR_OUT$ <> "" then
       print CHAR_OUT$;
       if CHAR_OUT$ = chr$(13) then 'workaround for mmbasic bug??
         print ""
@@ -278,22 +292,22 @@ close #6
 end sub
 
 
-function getchar$() as string 
+function getchar$() as string
 getchar$ = ""
 keyflag% = keydown(7)
 if keydown(7) > 0 and keyflag% <> lastmodifier% then
     select case keyflag%
-      case 1, 16, 17 'ALT Keys 
+      case 1, 16, 17 'ALT Keys
         altflag% = 1 : winflag% = 0 : ctrlflag% = 0 : shiftflag% = 0
-      case 4, 64, 68 'WIN keys 
+      case 4, 64, 68 'WIN keys
         altflag% = 0 : winflag% = 1 : ctrlflag% = 0 : shiftflag% = 0
-      case 2, 32, 34 'Control Keys 
+      case 2, 32, 34 'Control Keys
         altflag% = 0 : winflag% = 0 : ctrlflag% = 1 : shiftflag% = 0
       case 8, 128, 136 'Shift keys
         altflag% = 0 : winflag% = 0 : ctrlflag% = 0 : shiftflag% = 1
       case 5, 20, 21, 65, 80, 81, 85 'ALT+WIN Keys
         altflag% = 1 : winflag% = 1 : ctrlflag% = 0 : shiftflag% = 0
-      case else 
+      case else
     end select
 end if
 if keydown(7) = 0 then
@@ -339,7 +353,7 @@ select case textchoice$
   case "","1" ' hitting enter or 1
     text_color = 1 : setupcolor
     print "White Selected."
-  case "2" 
+  case "2"
     text_color = 2 : setupcolor
     print "Amber Selected."
   case "3"
@@ -436,7 +450,7 @@ select case comtype$
   case "2"
     rs232% = 1 ' 1 is INVerted RS232 levels
     comporttype$ = "RS-232 Serial"
-    print "RS-232 Serial Selected." 
+    print "RS-232 Serial Selected."
   case else
     print "Invalid selection, please try again."
     pause 1200
@@ -479,7 +493,7 @@ input "Make Selection: ", comspeedchoice$
       print "57600 Selected." : comspeed$ = "57600"
     case else
       print "Invalid selection. Please try again."
-      pause 1200  
+      pause 1200
       setcomspeed
   end select
 onlineflag% = 1 'enable so we're back online
@@ -489,7 +503,7 @@ end sub
 
 sub setupcolor
 select case TEXT_COLOR
-  case 1 
+  case 1
 TERM_COLOR1 = 255
 TERM_COLOR2 = 255
 TERM_COLOR3 = 255
@@ -510,9 +524,9 @@ end sub
 sub startcomport
 close #5
     if rs232% = 1 then
-      open comportstr$+":"+comspeed$+","+"256"+",get_serial_input"+",INV" as #5
+      open comportstr$+":"+comspeed$+","+"8192"+",get_serial_input"+",INV" as #5
     else
-      open comportstr$+":"+comspeed$+","+"256"+",get_serial_input" as #5
+      open comportstr$+":"+comspeed$+","+"8192"+",get_serial_input" as #5
     end if
 end sub
 
@@ -534,12 +548,17 @@ end sub
 
 
 sub get_serial_input
-CHARS_IN$ = input$(LOC(#5),#5)
-if onlineflag% = 1 then
-  print CHARS_IN$;
-    if soundflag% = 1 AND CHARS_IN$ = chr$(13) then PLAY mp3 "sound.mp3"
-    end if  
-end if
+  if xmodem_up$<>"" or xmodem_down$<>"" then
+    CHARS_IN$ = input$(1,#5) ' only one char at a time
+    if CHARS_IN$ <> "" then _xmodem_handler CHARS_IN$
+  else
+    CHARS_IN$ = input$(LOC(#5),#5)
+    if onlineflag% = 1 then
+      print CHARS_IN$;
+        if soundflag% = 1 AND CHARS_IN$ = chr$(13) then PLAY mp3 "sound.mp3"
+        end if
+    end if
+  end if
 end sub
 
 
@@ -566,12 +585,13 @@ cls
 else
   onlineflag% = 0
   print "Please wait, downloading "; receivefile$
-      XMODEM R receivefile$, comportnum% 
-  if mm.errno <> 0 then 
+  '    XMODEM R receivefile$, comportnum%
+  _xmodem_recv receivefile$
+  if mm.errno <> 0 then
     Print "Download Error: ";mm.errmsg$,
     onlineflag% = 1
   end if
-  if mm.errno = 0 then 
+  if mm.errno = 0 then
     onlineflag% = 0
     print chr$(13); chr$(10);"Download Complete.",
     print ""
@@ -593,10 +613,11 @@ FileDialog(NameOfFile$())   ' no options so allow any file to be selected
     pause 1500
     exit sub
   else
-    cls    
+    cls
     print "Please wait, uploading "; NameOfFile$(0)
-      XMODEM S NameOfFile$(0), comportnum%
-  end if      
+    '  XMODEM S NameOfFile$(0), comportnum%
+    _xmodem_send NameOfFile$(0)
+  end if
   if mm.errno <> 0 then Print "Upload Error: ";mm.errmsg$
       end if
     print "Exiting Upload."
@@ -614,17 +635,17 @@ end sub
 sub hangup
   colour rgb(black), rgb(red)
   print chr$(13); chr$(10); "*** DISCONNECTING ***"
-  colour rgb(white), rgb(black)  
+  colour rgb(white), rgb(black)
     onlineflag% = 0 'disable incoming data display while hanging up
       print #5; chr$(13); chr$(10)
       pause 1200 'take our time. too fast and modem will ignore
-      print #5; chr$(43);chr$(43);chr$(43); 
+      print #5; chr$(43);chr$(43);chr$(43);
       pause 1500 'take our time. too fast and modem will ignore
       print ""
       print #5;"ATH0"
   colour rgb(black), rgb(red)
     print "*** DISCONNECTED ***"
-      setupcolor        
+      setupcolor
 onlineflag% = 1
 end sub
 
@@ -642,15 +663,15 @@ end sub
 
 sub changeinitstring
 local newinitstring$
-        print @(0,420) ""        
+        print @(0,420) ""
             print "Current modem initialization string: ";modeminitstring$
             input "Enter new modem initialization string: ", newinitstring$
-              if newinitstring$ <> "" then 
-                print "Changing modem initializatin string to "; newinitstring$ 
+              if newinitstring$ <> "" then
+                print "Changing modem initializatin string to "; newinitstring$
                 modeminitstring$ = newinitstring$
                 pause 1500
-              else          
-                print "Not updated." 
+              else
+                print "Not updated."
                 pause 1500
               end if
 end sub
@@ -667,7 +688,7 @@ local comwindow$
   print @((ox+2)*fwidth%,(oy+2)*fheight%) "-------------------------";
   print @((ox+2)*fwidth%,(oy+3)*fheight%) "A.COM PORT                :",comportstr$
   print @((ox+2)*fwidth%,(oy+4)*fheight%) "B.BAUD RATE               :",comspeed$
-  print @((ox+2)*fwidth%,(oy+5)*fheight%) "C.COM PORT TYPE           :",comporttype$ 
+  print @((ox+2)*fwidth%,(oy+5)*fheight%) "C.COM PORT TYPE           :",comporttype$
   print @((ox+2)*fwidth%,(oy+6)*fheight%) "D.DATA BITS               : 8";
   print @((ox+2)*fwidth%,(oy+7)*fheight%) "E.PARITY                  : NONE";
   print @((ox+2)*fwidth%,(oy+8)*fheight%) "F.FLOW CONTROL            : (NOT IMPLEMENTED)";
@@ -706,7 +727,7 @@ select case comwindow$
   case "i", "I"
     changeinitstring : pause 1200 : comsettings
   case "j", "J"
-    changeecho : pause 1200 : comsettings    
+    changeecho : pause 1200 : comsettings
   case "s", "S"
     print @(0,420) "Saving Configuration to settings.cfg"
     saveconfig : pause 1500 : comsettings
@@ -817,13 +838,13 @@ local newphonepassword$
   print @((ox+2)*fwidth%,(oy+16)*fheight%)"D) or # to Dial. E) to Edit Host/Phone, L) to Edit Login/PW";
   print @((ox+2)*fwidth%,(oy+17)*fheight%)"C) to Clear an entry, S) to Save the Phonebook, or Enter to Exit.";
   print @((ox+2)*fwidth%,(oy+18)*fheight%)"Make Selection:"; : input dialchoice$,
-  select case dialchoice$ 
+  select case dialchoice$
       case "" 'they hit enter
         print @(0,420)"Returning to terminal." 'print text below the box
         pause 1200
         welcomebanner
      case "c" 'clear an entry
-        print @(0,420) ""        
+        print @(0,420) ""
         input "Enter entry to clear: ", phoneentry%
           if phoneentry% = 1 to 10 then
             print "Clearing entry"; phoneentry%
@@ -832,59 +853,59 @@ local newphonepassword$
             phonebookpassword$(phoneentry%) = ""
             pause 1500
             phonebook
-          end if  
-          if phoneentry% = 0 then ' they hit enter 
-                print "Clearing aborted." 
+          end if
+          if phoneentry% = 0 then ' they hit enter
+                print "Clearing aborted."
                 pause 1500
                 phonebook
           end if
      case "e" 'edit an entry
-        print @(0,420) ""        
+        print @(0,420) ""
         input "Enter entry to edit: ", phoneentry%
           if phoneentry% = 1 to 10 then
             print "Current hostname / phone number: ";phonebookentry$(phoneentry%)
             input "Enter new hostname / phone number: ", newphoneentry$
-              if newphoneentry$ <> "" then 
-                print "Changing Entry";phoneentry%; " to "; newphoneentry$ 
+              if newphoneentry$ <> "" then
+                print "Changing Entry";phoneentry%; " to "; newphoneentry$
                 phonebookentry$(phoneentry%) = newphoneentry$
                 pause 1500
                 phonebook
-              else          
-                print "Not updated." 
+              else
+                print "Not updated."
                 pause 1500
                 phonebook
               end if
           end if
       case "d"
-        print @(0,420) chr$(10),chr$(13)        
+        print @(0,420) chr$(10),chr$(13)
         input "Entry # to dial: ", phoneentry%
         print "Dialing entry";phoneentry%;", " phonebookentry$(phoneentry%)
         print #5; "atdt"; phonebookentry$(phoneentry%)"", chr$(13)
       case "l" 'edit the login for an entry
-        print @(0,420) ""        
+        print @(0,420) ""
         input "Enter entry to edit: ", phoneentry%
           if phoneentry% = 1 to 10 then
             print "Current Username: ";phonebookusername$(phoneentry%)
             print "Current Password: ";phonebookpassword$(phoneentry%)
             input "Enter new Username: ", newphoneusername$
-              if newphoneusername$ <> "" then 
-                print "Changing Username";phonebookusername$(phoneentry%); " to "; newphoneusername$ 
+              if newphoneusername$ <> "" then
+                print "Changing Username";phonebookusername$(phoneentry%); " to "; newphoneusername$
                 phonebookusername$(phoneentry%) = newphoneusername$
                 pause 1500
-              else          
-                print "Not updated." 
+              else
+                print "Not updated."
                 pause 1500
                 phonebook
               end if
             print chr$(10), chr$(13)
             input "Enter new Password: ", newphonepassword$
-              if newphonpassword$ <> "" then 
-                print "Changing Password";phonebookpassword$(phoneentry%); " to "; newphonepassword$ 
+              if newphonpassword$ <> "" then
+                print "Changing Password";phonebookpassword$(phoneentry%); " to "; newphonepassword$
                 phonebookpassword$(phoneentry%) = newphonepassword$
                 pause 1500
                 phonebook
-              else          
-                print "Not updated." 
+              else
+                print "Not updated."
                 pause 1500
                 phonebook
               end if
@@ -901,8 +922,8 @@ local newphonepassword$
       case else 'invalid junk
         print @(0,420)"Invalid selection."
         pause 1500
-        phonebook  
-      end select  
+        phonebook
+      end select
 end sub
 
 
@@ -1247,16 +1268,399 @@ DefineFont #11
   FFC1FFFF 000000F0 00000000
 End DefineFont
 '*****************************************************************
-                                                                
-                                                                
-                                                                
-                                                                
-                                                                
-                                                                
-                                                                
-                                                                
-                                                                
-                                                                
-                                                                
-                                                                
-                                                                
+
+'//////////////////////////////////////////////////////////////////////////////
+'
+' /////////////////////
+' // xmodem_cmm2.bas // (C) 2021 David R. Van Wagner, Jay Crutti MIT LICENSE
+' /////////////////////
+'
+' XMODEM receive for Color MaxiMite 2
+'
+'//////////////////////////////////////////////////////////////////////////////
+'
+' OPEN SOURCE - MIT License Paraphrased (See MIT License for full details)
+'
+' 1. Always give credit where credit is due, with conditions:
+' 2. Do whatever else you want with the source code or binaries, as is or revise
+' 3. No liability assumed for any potential problems
+'
+'//////////////////////////////////////////////////////////////////////////////
+'
+' MIT License
+'
+' XMODEM receive for Color MaxiMite 2
+' Copyright (c) 2020 by David R. Van Wagner, Jay Crutti
+' https://github.com/davervw/cmm2_xmodem
+'
+' Permission is hereby granted, free of charge, to any person obtaining a copy
+' of this software and associated documentation files (the "Software"), to deal
+' in the Software without restriction, including without limitation the rights
+' to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+' copies of the Software, and to permit persons to whom the Software is
+' furnished to do so, subject to the following conditions:
+'
+' The above copyright notice and this permission notice shall be included in all
+' copies or substantial portions of the Software.
+'
+' THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+' IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+' FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+' AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+' LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+' OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+' SOFTWARE.
+'
+'//////////////////////////////////////////////////////////////////////////////
+
+'
+' TODO:
+'
+' ESP8266 WI-FI MODEM SUPPORT
+' TELNET SEND SUPPORT (binary file currently fails to send, telnet escape character?)
+' XMODEM-1K
+' XMODEM CRC
+' XFER FILENAME
+' GITHUB PRIVATE ORGANIZATION
+' FIX STATE 4 - NEED TO EAT BAD BLOCK BEFORE ERROR AGAIN
+' XMODEM UNIT TESTS (SUCCESS/FAILURE CASES)
+' INTEGRATE INTO MAXITERM
+
+'option crlf lf ' ENTER key is LF
+'option explicit ' require variable types to be explicitly stated or declared
+
+sub _xmodem_dim
+  dim nak$:nak$=chr$(21) '^U
+  dim ack$:ack$=chr$(6)  '^F
+  dim soh$:soh$=chr$(1)  '^A
+  dim can$:can$=chr$(24) '^X
+  dim eot$:eot$=chr$(4)  '^D
+  dim eof$:eof$=chr$(26) '^Z
+  dim cr$:cr$=chr$(13)   '^M
+  dim lf$:lf$=chr$(10)   '^J
+  dim bs$:bs$=chr$(8)    '^H
+  dim bel$:bel$=chr$(7)  '^G
+  dim stx$:stx$=chr$(2)  '^B and STX is used to indicate a 1K packet
+  'C used by receiver to indicate preference for CRC
+
+  dim xmodem_sum%
+  dim xmodem_block%:xmodem_block%=1
+  dim xmodem_state%:xmodem_state%=0
+  dim xmodem_buffer$:xmodem_buffer$=""
+  dim xmodem_errors%:xmodem_errors%=0
+  dim xmodem_last_recv
+  dim xmodem_up$
+  dim xmodem_down$
+end sub '_xmodem_dim_const
+
+'XMODEM is simple algorithm
+'blocks are [SOH x01][BLK#][~BLK#][128-BYTES][SUM]
+'sender expects [NAK x15] to start
+'sender expects [ACK x06] on successful block receive, otherwise NAK will cause retransmit
+'[CAN x18] or [CAN][CAN] is an extension to cancel transmission from receiver
+'[EOT] signals no more to send
+'all data is 8-bit binary, including simple sum.  ~BLK# is inverse BLK#, xor 255 (equiv. 255-BLK#)
+'block number starts at 1, increments by 1, wraps from 255 to 0
+'last block is padded to end with [EOF x1A] to make up 128 bytes
+'10 second timeout to get SOH, max 10 errors, about 90 seconds timeout at start
+  'block receive timeout is 7 seconds
+
+sub _dumb_terminal
+  option crlf lf
+if len(xmodem_down$)>0 then
+  print "XMODEM receive capable"
+  print "^U to receive"
+  print "^X to cancel transmission"
+end if
+if len(xmodem_up$)>0 then
+  print "XMODEM upload capable"
+end if
+
+  xmodem_last_recv = timer
+
+  local key$
+  do ' terminal - send pressed keys, send [nak] on timeout
+    key$ = inkey$
+    if len(key$) > 0 then
+      print #5;key$;
+      _xmodem_timer_handler key$
+    else
+    '_cursor_maintain
+    end if
+    _xmodem_timer_handler ""
+  loop while xmodem_up$<>"" AND xmodem_down$<>""
+
+  option crlf crlf
+end sub '_dumb_terminal
+
+sub _xmodem_send xmodem_filename$
+  xmodem_up$ = xmodem_filename$
+  _dumb_terminal
+end sub
+
+sub _xmodem_recv xmodem_filename$
+  xmodem_down$ = xmodem_filename$
+  _dumb_terminal
+end sub
+
+' handle timeouts for xmodem
+' key$ is whether a key was pressed
+sub _xmodem_timer_handler key$
+  if len(key$)>0 then xmodem_last_recv = timer
+  if (xmodem_state% = 0 and (timer - xmodem_last_recv) > 10000) or (xmodem_state% > 0 and (timer - xmodem_last_recv) > 7000) then
+    print #5,nak$;
+    xmodem_last_recv=timer
+    if xmodem_block% > 1 then
+      if xmodem_state%=0 or xmodem_state%=4 then ' didn't receive block
+        'print "TIMEOUT"
+        '_cursor_maintain_reset
+        xmodem_errors%=xmodem_errors%+1
+      else
+        if xmodem_state%=5 then
+          xmodem_state%=0 ' cancel send
+          close #2
+          xmodem_block%=0
+        else
+          xmodem_state%=4 ' failed block
+        end if
+      end if
+      if xmodem_errors% >= 10 and xmodem_block%<>0 then
+        'print "FAILED"
+        '_cursor_maintain_reset
+        close #1
+        xmodem_block%=1
+        xmodem_down$=""
+      end if
+    end if
+  end if
+end sub
+
+' serial read handler
+sub _serial_read
+  local serial$ = input$(1, #5)
+  _xmodem_handler serial$
+end sub '_serial_read
+
+' serial$ is one character read from serial port
+' global xmodem_down$ is download filename, or empty string to not download
+' global xmodem_up$ is upload filename, or empty string to not upload
+' should only call if uploading or downloading
+sub _xmodem_handler serial$
+  if len(serial$)=0 then exit 'sub
+  xmodem_last_recv = timer
+
+  'XMODEM state machine
+  'state 0 - ready for block
+  'state 1 - soh received, waiting for blk#
+  'state 2 - blk# received, waiting for inverse blk#
+  'state 3 - receiving block, waiting for complete block including checksum
+  'state 4 - receiving error block, waiting for timeout
+  'state 5 - sending, waiting for ACK
+
+  select case xmodem_state%
+    case 0: ' ready for block
+      if serial$=soh$ and len(xmodem_down$)<>0 then
+         if xmodem_block%=1 then
+            open xmodem_down$ for output as #1
+         end if
+         xmodem_state%=1
+         if debug% then print "<SOH>";':_cursor_maintain_reset
+      else if xmodem_block%=1 and serial$=nak$ and len(xmodem_up$)<>0 then
+         open xmodem_up$ for input as #2
+         xmodem_buffer$=input$(128,#2)
+         _xmodem_send_buffer
+         xmodem_state%=5
+      else
+         if xmodem_block%>1 and serial$=eot$ then
+            if debug% then print "<EOT> Success!"
+            '_cursor_maintain_reset
+            _xmodem_status_text " XMODEM Receiving Success"
+            close #1
+            print #5,ack$; ' Signal Received End of Transmission
+            xmodem_block%=1
+            xmodem_down$=""
+            ' note does not change state yet, waits for ACK
+            ' Jay: need to test scenario send EOT recv NAK, send EOT again recv ACK to really be done.
+         else
+            if serial$=cr$ or serial$=lf$ or serial$=bs$ or serial$=bel$ then
+              if serial$ <> bel$ then
+                '_cursor_maintain_hide
+                if debug% then
+                  print "<x";hex$(asc(serial$),2);">";
+                  if serial$=cr$ then serial$=cr$+lf$
+                end if
+                print serial$;
+              end if
+            else
+              if asc(serial$)<32 or asc(serial$)>126 then
+                print "<x";hex$(asc(serial$),2);">";
+                '_cursor_maintain_reset
+              else
+                print serial$;
+                '_cursor_maintain_reset
+              end if
+            end if
+         end if
+      end if
+    case 1: 'soh received, waiting for blk#
+      if serial$<>chr$(xmodem_block% and 255) then
+         print "<??";asc(serial$);"??>";
+         '_cursor_maintain_reset
+         xmodem_state%=4
+      else
+         if debug% then print "<BLK";xmodem_block% and 255;">";
+         '_cursor_maintain_reset
+         xmodem_state%=2
+      end if
+    case 2: ' blk# received, waiting for inverse blk#
+      if serial$<>chr$((xmodem_block% and 255) xor 255) then
+         print "<??";asc(serial$);"??>";
+         '_cursor_maintain_reset
+         xmodem_state%=4
+      else
+         if debug% then print "<~BLK";asc(serial$);">";
+         '_cursor_maintain_reset
+         xmodem_state%=3:xmodem_buffer$="":xmodem_sum%=0
+      end if
+    case 3: ' receiving block, waiting for complete block including checksum
+      if len(xmodem_buffer$) < 128 then
+         xmodem_buffer$=xmodem_buffer$+serial$
+         xmodem_sum%=(xmodem_sum%+asc(serial$)) and 255
+         'print "<";len(xmodem_buffer$);":";asc(serial$)">";
+         if len(xmodem_buffer$) = 128 then
+            if debug% then print "<128 BYTES>";
+            '_cursor_maintain_reset
+         end if
+      else
+         if xmodem_sum% = asc(serial$) then
+            if debug% then print "<SUM";xmodem_sum%;">"
+            '_cursor_maintain_reset
+            xmodem_block% = xmodem_block% + 1
+            print #1,xmodem_buffer$;
+            print #5,ack$; ' signal received block
+            xmodem_state%=0
+         else
+            print "<SUM";asc(serial$);"!=";xmodem_sum%;">"
+            '_cursor_maintain_reset
+            print #5,nak$; ' Signal Problem in Communication
+            xmodem_state%=1
+         end if
+      end if
+    case 4: ' receiving error block, waiting for timeout
+      if debug% then print "TIMEOUT" ': _cursor_maintain_reset
+      xmodem_errors%=xmodem_errors%+1
+      xmodem_buffer$=""
+      if xmodem_errors% == 10 then
+         print "FAILED"
+         '_cursor_maintain_reset
+         xmodem_state%=0
+         close #1
+         xmodem_block%=1
+         xmodem_down$=""
+      end if
+    case 5: 'sending, waiting for ACK
+      if serial$=ack$ then
+         if debug% then print "<ACK>"
+         '_cursor_maintain_reset
+         if len(xmodem_buffer$) > 0 then
+           xmodem_buffer$ = input$(128, #2) ' get next block
+           if len(xmodem_buffer$) = 0 then
+             if debug% then print "Wrapping up";
+             '_cursor_maintain_reset
+             print #5,eot$;
+           else
+             xmodem_block%=xmodem_block%+1
+             _xmodem_send_buffer
+           end if
+         else
+           if debug% then print "Success!!!"
+           _xmodem_status_text " XMODEM Sending Success"
+           '_cursor_maintain_reset
+           xmodem_state%=0
+           xmodem_block%=1
+           close #2
+           xmodem_up$=""
+         endif
+      else
+         if serial$=nak$ then
+           if debug% then print "<NAK>"
+           '_cursor_maintain_reset
+           _xmodem_send_buffer
+         else if serial$=can$ then
+           if debug% then print "<CAN>"
+           '_cursor_maintain_reset
+           xmodem_state%=0
+           xmodem_block%=1
+           close #2
+           xmodem_down$=""
+         end if
+      end if
+  end select
+  if xmodem_state%<>0 or xmodem_block%<>1 then _xmodem_status_progress
+end sub
+
+sub _xmodem_send_buffer
+  local i
+  if debug% then print "<BLOCK";xmodem_block% and 255;">";
+  '_cursor_maintain_reset
+  if len(xmodem_buffer$)<128 then
+    do
+      xmodem_buffer$=xmodem_buffer$+eof$
+    loop until len(xmodem_buffer$)=128
+  end if
+  print #5, soh$;
+  print #5, chr$(xmodem_block% and 255);
+  print #5, chr$((xmodem_block% and 255) xor 255);
+  print #5, xmodem_buffer$;
+  xmodem_sum% = 0
+  for i=1 to 128:xmodem_sum% = xmodem_sum% + asc(mid$(xmodem_buffer$, i, 1)):next
+  print #5, chr$(xmodem_sum% and 255);
+end sub '_xmodem_send_buffer
+
+sub _xmodem_status_progress
+  ' build status line
+  local status$
+  status$=" XMODEM"
+  if xmodem_state% = 5 then
+    status$=status$+" Sending"
+  else
+    status$=status$+" Receiving"
+  end if
+  status$=status$+" #"+STR$(xmodem_block%)+" "+STR$(xmodem_errors%)+" errs "
+
+  _xmodem_status_text status$
+end sub '_xmodem_status_progress
+
+sub _xmodem_status_text status$
+  local save_x, save_y, cols, add, i
+
+  ' save cursor position
+  save_x = mm.info(hpos)
+  save_y = mm.info(vpos)
+
+  ' append spaces to fill to end of line
+  cols = mm.hres/mm.info(fontwidth)
+  add = cols-1-len(status$)
+  for i = 1 to add : status$=status$+" " : next i
+
+  ' display status line
+  print @(0,mm.vres-mm.info(fontheight),2) status$;
+
+  ' restore cursor position
+  print @(save_x,save_y,1) " ";
+  print bs$;
+end sub '_xmodem_status_text
+
+sub _xmodem_status_clear
+  'local status$, cols, add, i
+  'cols = mm.hres/mm.info(fontwidth)
+  'add = cols-1
+  'status$ = ""
+  'for i = 1 to add : status$=status$+" " : next i
+  '_xmodem_status_text status$
+  box 0, mm.vres-mm.info(fontheight), mm.hres, mm.info(fontheight), 0, , rgb(black)
+end sub '_xmodem_status_clear
+
+'//////////////////////////////////////////////////////////////////////////////
+' END - XMODEM receive for Color MaxiMite 2
+'//////////////////////////////////////////////////////////////////////////////
