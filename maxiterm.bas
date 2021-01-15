@@ -289,12 +289,6 @@ function getchar$() as string 'magic from Rich Martin
     kp% = keydown(1)
     if kl% <> kp% then
       getchar$ = chr$(kp%)    
-      timer = 0
-    else
-      'if timer > kreprate then
-       ' getchar$ = chr$(kp%)
-        timer = 0
-      end if
     end if
     kl% = kp%
     pause 10
