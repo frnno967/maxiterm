@@ -1,3 +1,8 @@
+v1.9.1:
+-Refactor code handling modifier key input. Added support for future use of Shift and Control keys.
+-Added Local Echo option to COM settings menu, added parameter to settings.cfg file.
+-Removed (some) embarrassing comments.
+
 v1.9:
 -New autodialer / phone book feature using ALT-A. Saves phonebook to bbslist.cfg file. Username and passwords are saved but not used for anything.
 -New "Wargames" sound for incoming CR.
