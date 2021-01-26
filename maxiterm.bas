@@ -1,7 +1,7 @@
 'Simple terminal program v 0.1 by Rich Martin (datawiz) 11:13pm 02 Oct 2020
 'Also code from Flashback.bas 1.0.0 by Rich Martin (datawiz)
 'Also code from vegipete for the GetFile routine
-'Version 1.9 John Crutti Jr 1-09-2021
+'Version 1.9.1 John Crutti Jr 1-25-2021
 
 OPTION EXPLICIT
 ON ERROR IGNORE
@@ -33,8 +33,15 @@ dim comporttype$ = "TTL Serial"
 dim CHAR_OUT$ 'characters we're typing at the console to be sent to modem
 dim altflag% 'is ALT key pressed?
 dim winflag% 'is WINDOWS key pressed?
+dim shiftflag% = 0 'is a SHIFT key pressed?
+dim ctrlflag% = 0 'is a CONTROL key pressed?
+dim keyvalue% = 0 'acsii value of key pressed in getchar() routine
+dim keyflag% = 0 'has a key been pressed in getchar() routine
+dim keylast% = 0 'value of last ascii key typed in getchar() routine
+dim lastmodifier% = 0 'value of the last modifier keys used in getchar() routine
 dim CHARS_IN$ 'characters being received from the modem
 dim echo% = 0 'is local echo enabled?
+dim echosetting$ = "Echo Off"
 dim linefeeds% = 0 'setting of line feeds to be sent to modem after every CR
 dim linefeedstate$ = "LF Off"
 dim width%
@@ -47,8 +54,7 @@ dim xpos% = 0
 dim ypos% = 0
 dim receivefile$ 'filename of file we're downloading
 dim text_color = 1 'used in setting font color choice
-dim C$ 'used as part of the ALT case statement section
-dim kp%, kl%, kf% 'not sure what these do
+dim feature$ 'output of getchar function to select program features
 dim modemresetstring$ = "ATZ" 'command to reset the modem
 dim modeminitstring$ = "ATE1V1X0Q0s40=512s0=1s41=1f0" 'command used to configure the modem
 dim modeminfostring$ = "ATI" 'command to ask modem to show information
@@ -93,9 +99,9 @@ if CHAR_OUT$ <> "" then
     end if
   if CHAR_OUT$ = chr$(136) then upload
     end if
- C$ = getchar$() 'not sure what this does
+feature$ = getchar$() 
   if altflag% = 1 then 'check for ALT being asserted
-  select case lcase$(C$) 'turn all characters to lowercase
+  select case feature$ 'turn all characters to lowercase
       case "a" 'show the autodial phone book screen
         phonebook
       case "b" 'set the COM port parameters again
@@ -162,6 +168,7 @@ if CHAR_OUT$ <> "" then
       case "h" 'user help screen
           cls
           dialogHelp
+
       case "e" 'turn on local echo in case modem isn't set to echo    
         if echo% = 1 then
           welcomebanner
@@ -170,6 +177,7 @@ if CHAR_OUT$ <> "" then
           print ""
           pause 1000
           echo% = 0 
+          echosetting$ = "Echo Off"
           welcomebanner
         else
         text 400,300, "*** Local Echo On ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
@@ -177,6 +185,7 @@ if CHAR_OUT$ <> "" then
           print ""
           pause 1000
           echo% = 1
+          echosetting$ = "Echo On"
           welcomebanner
         end if  
       case "p" 'show the current com port settings
@@ -219,6 +228,7 @@ open "settings.cfg" for input as #7
 line input #7, comporttype$
 line input #7, linefeedstate$
 line input #7, modeminitstring$
+line input #7, echosetting$
 close #7
   if comporttype$ = "RS-232 Serial" then
     rs232% = 1
@@ -230,6 +240,12 @@ close #7
   else
     linefeeds% = 0
   end if
+  if echosetting$ = "Echo On" then
+    echo% = 1
+  else
+    echo% = 0
+  end if
+
 end sub
 
 sub saveconfig
@@ -237,6 +253,7 @@ open "settings.cfg" for output as #7
 print #7, comporttype$
 print #7, linefeedstate$
 print #7, modeminitstring$
+print #7, echosetting$
 close #7
 end sub
 
@@ -273,26 +290,35 @@ close #6
 end sub
 
 
-function getchar$() as string 'magic from Rich Martin
-  altflag% = 0
-  winflag% = 0
-  getchar$ = ""
-  if keydown(7) > 0 then
-    kf% = keydown(7)
-    if (kf% AND &b00000001) = &b00000001 then altflag% = 1 
-    if (kf% AND &b00010000) = &b00010000 then altflag% = 1
-    if (kf% AND &b00000100) = &b00000100 then winflag% = 1
-    if (kf% AND &b00100000) = &b01000000 then winflag% = 1
+function getchar$() as string 
+getchar$ = ""
+keyflag% = keydown(7)
+if keydown(7) > 0 and keyflag% <> lastmodifier% then
+    select case keyflag%
+      case 1, 16, 17 'ALT Keys 
+        altflag% = 1 : winflag% = 0 : ctrlflag% = 0 : shiftflag% = 0
+      case 4, 64, 68 'WIN keys 
+        altflag% = 0 : winflag% = 1 : ctrlflag% = 0 : shiftflag% = 0
+      case 2, 32, 34 'Control Keys 
+        altflag% = 0 : winflag% = 0 : ctrlflag% = 1 : shiftflag% = 0
+      case 8, 128, 136 'Shift keys
+        altflag% = 0 : winflag% = 0 : ctrlflag% = 0 : shiftflag% = 1
+      case 5, 20, 21, 65, 80, 81, 85 'ALT+WIN Keys
+        altflag% = 1 : winflag% = 1 : ctrlflag% = 0 : shiftflag% = 0
+      case else 
+    end select
+end if
+if keydown(7) = 0 then
+altflag% = 0 : winflag% = 0 : ctrlflag% = 0 : shiftflag% = 0
+end if
+lastmodifier% = keyflag%
+keyvalue% = keydown(1)
+  if keydown(0) > 0 and keylast% <> keyvalue% then
+      getchar$ = chr$(keyvalue%)    
+      getchar$ = lcase$(getchar$)
   end if
-  kp% = keydown(0)
-  if kp% > 0 then
-    kp% = keydown(1)
-    if kl% <> kp% then
-      getchar$ = chr$(kp%)    
-    end if
-    kl% = kp%
-    pause 10
-  end if
+keylast% = keyvalue%
+pause 5
 end function
 
 
@@ -307,7 +333,7 @@ sub introscreen
   print @((ox+2)*fwidth%,(oy+4)*fheight%) "        for  the";
   print @((ox+2)*fwidth%,(oy+5)*fheight%) "    Color Maximite 2";
   print @((ox+2)*fwidth%,(oy+6)*fheight%) "";
-  print @((ox+2)*fwidth%,(oy+7)*fheight%) "       Version 1.9";
+  print @((ox+2)*fwidth%,(oy+7)*fheight%) "       Version 1.9.1";
   print @((ox+2)*fwidth%,(oy+8)*fheight%) "           by";
   print @((ox+2)*fwidth%,(oy+9)*fheight%) "       Jay Crutti";
   print @((ox+2)*fwidth%,(oy+10)*fheight%)"          2021";
@@ -372,6 +398,35 @@ select case lfchoice$
     print "Invalid Selection, please try again."
     pause 1200
     changelinefeeds
+end select
+pause 1200
+end sub
+
+
+sub changeecho
+local echochoice$
+print @(0,420)""
+print "Turn on Local Echo?"
+print "1.No [DEFAULT]"
+print "2.Yes"
+input "Make Selection;"; echochoice$
+select case echochoice$
+  case "" ' hitting enter
+    echo% = 0 
+    echosetting$ = "Echo Off"
+    print "Local Echo is Off."
+  case "1"
+    echo% = 0
+    echosetting$ = "Echo Off"
+    print "Local Echo is Off."
+  case "2"
+    echo% = 1
+    echosetting$ = "Echo On"
+    print "Local Echo is On."
+  case else
+    print "Invalid Selection, please try again."
+    pause 1200
+    changeecho
 end select
 pause 1200
 end sub
@@ -656,9 +711,9 @@ end sub
 sub comsettings
 local comwindow$
   const ox = 20
-  const oy = 15
+  const oy = 13
   cls
-  box ox*fwidth%, oy*fheight%, 60*fwidth%, 16*fheight%, 1,,rgb(black)
+  box ox*fwidth%, oy*fheight%, 60*fwidth%, 17*fheight%, 1,,rgb(black)
   print @((ox+2)*fwidth%,(oy+1)*fheight%) "CURRENT COM PORT SETTINGS";
   print @((ox+2)*fwidth%,(oy+2)*fheight%) "-------------------------";
   print @((ox+2)*fwidth%,(oy+3)*fheight%) "A.COM PORT                :",comportstr$
@@ -670,9 +725,10 @@ local comwindow$
   print @((ox+2)*fwidth%,(oy+9)*fheight%) "G.STOP BITS               : 1";
   print @((ox+2)*fwidth%,(oy+10)*fheight%)"H.SEND LINE FEED AFTER CR :",linefeedstate$
   print @((ox+2)*fwidth%,(oy+11)*fheight%)"I.INIT STRING             :",modeminitstring$
-  print @((ox+2)*fwidth%,(oy+12)*fheight%)"";
-  print @((ox+2)*fwidth%,(oy+13)*fheight%)"To change settings, enter letter or hit enter to exit.";
-  print @((ox+2)*fwidth%,(oy+14)*fheight%)"Enter S) to save. Make Selection"; : input comwindow$,
+  print @((ox+2)*fwidth%,(oy+12)*fheight%)"J.LOCAL ECHO              :",echosetting$
+  print @((ox+2)*fwidth%,(oy+13)*fheight%)"";
+  print @((ox+2)*fwidth%,(oy+14)*fheight%)"To change settings, enter letter or hit enter to exit.";
+  print @((ox+2)*fwidth%,(oy+15)*fheight%)"Enter S) to save. Make Selection"; : input comwindow$,
 select case comwindow$
   case "" ' they hit enter
     print @(0,420) "Returning to terminal."
@@ -700,6 +756,8 @@ select case comwindow$
     print chr$(10),chr$(13) : changelinefeeds : pause 1200 : comsettings
   case "i", "I"
     changeinitstring : pause 1200 : comsettings
+  case "j", "J"
+    changeecho : pause 1200 : comsettings    
   case "s", "S"
     print @(0,420) "Saving Configuration to settings.cfg"
     saveconfig : pause 1500 : comsettings
@@ -713,9 +771,9 @@ sub dialoghelp
   const ox = 30
   const oy = 15
   cls
-  box ox*fwidth%, oy*fheight%, 38*fwidth%, 23*fheight%, 1,,rgb(black)
+  box ox*fwidth%, oy*fheight%, 40*fwidth%, 23*fheight%, 1,,rgb(black)
   print @((ox+2)*fwidth%,(oy+1)*fheight%) "ALT-A Autodial Phone Book";
-  print @((ox+2)*fwidth%,(oy+2)*fheight%) "ALT-B Change COM Port Settings";
+  print @((ox+2)*fwidth%,(oy+2)*fheight%) "ALT-B Quick Change COM Port Settings";
   print @((ox+2)*fwidth%,(oy+3)*fheight%) "ALT-C Clear Screen";
   print @((ox+2)*fwidth%,(oy+4)*fheight%) "ALT-D List Local Directory";
   print @((ox+2)*fwidth%,(oy+5)*fheight%) "ALT-E Local Echo on/off";
@@ -723,7 +781,7 @@ sub dialoghelp
   print @((ox+2)*fwidth%,(oy+7)*fheight%) "ALT-H Help Menu";
   print @((ox+2)*fwidth%,(oy+8)*fheight%) "ALT-I Send Modem Initialization";
   print @((ox+2)*fwidth%,(oy+9)*fheight%) "ALT-L Line Feed TX Setting";
-  print @((ox+2)*fwidth%,(oy+10)*fheight%)"ALT-P Show COM Port Settings";
+  print @((ox+2)*fwidth%,(oy+10)*fheight%)"ALT-P COM Port Settings";
   print @((ox+2)*fwidth%,(oy+11)*fheight%)"ALT-Q Quit and Exit Terminal";
   print @((ox+2)*fwidth%,(oy+12)*fheight%)"ALT-R Reset the Modem";
   print @((ox+2)*fwidth%,(oy+13)*fheight%)"ALT-S Key Sound on/off";
@@ -746,7 +804,7 @@ sub credits
   box ox*fwidth%, oy*fheight%, 40*fwidth%, 15*fheight%, 1,,rgb(black)
   print @((ox+2)*fwidth%,(oy+1)*fheight%) "Maxiterm for the Color Maximite 2";
   print @((ox+2)*fwidth%,(oy+2)*fheight%) "---------------------------------";
-  print @((ox+2)*fwidth%,(oy+3)*fheight%) "Version 1.9";
+  print @((ox+2)*fwidth%,(oy+3)*fheight%) "Version 1.9.1";
   print @((ox+2)*fwidth%,(oy+4)*fheight%) "John 'Jay' Crutti Jr. and friends. ";
   print @((ox+2)*fwidth%,(oy+5)*fheight%) "Copyright 2021, MIT LICENSE";
   print @((ox+2)*fwidth%,(oy+6)*fheight%) "";
