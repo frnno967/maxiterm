@@ -1,7 +1,7 @@
 'Simple terminal program v 0.1 by Rich Martin (datawiz) 11:13pm 02 Oct 2020
 'Also code from Flashback.bas 1.0.0 by Rich Martin (datawiz)
 'Also code from vegipete for the GetFile routine
-'Version 1.9.1 John Crutti Jr 1-25-2021
+'Version 1.9.1 John Crutti Jr 1-28-2021
 
 OPTION EXPLICIT
 ON ERROR IGNORE
@@ -26,7 +26,7 @@ dim NameOfFile$(1)  ' place to put chosen filename string, goes in element 0
 dim comportnum% = 1 ' COM port number as an integer for COM Port subroutine.
 dim comportstr$ = "COM1" ' COM port as a string for COM Port subroutine.
 dim comchoice$ = "1" ' used in COM selection subroutine.
-dim comspeedchoice$ = "9" ' used in COM Speed selection subroutine.
+dim comspeedchoice$ = "8" ' used in COM Speed selection subroutine.
 dim comspeed$ = "115200" ' COM Speed as a string for COM Speed subroutine.
 dim rs232% = 0 'start with TTL type serial port
 dim comporttype$ = "TTL Serial"
@@ -353,10 +353,7 @@ local textchoice$
 print ""
 input "Which color do you want 1.White [DEFAULT], 2.Amber, or 3.Green "; textchoice$
 select case textchoice$
-  case "" ' hitting enter
-    text_color = 1 : setupcolor
-    print "White Selected."
-  case "1"
+  case "","1" ' hitting enter or 1
     text_color = 1 : setupcolor
     print "White Selected."
   case "2" 
@@ -382,18 +379,10 @@ print "1.No [DEFAULT]"
 print "2.Yes"
 input "Make Selection;"; lfchoice$
 select case lfchoice$
-  case "" ' hitting enter
-    linefeeds% = 0 
-    linefeedstate$ = "LF Off"
-    print "Line Feeds will not be sent."
-  case "1"
-    linefeeds% = 0
-    linefeedstate$ = "LF Off"
-    print "Line Feeds will not be sent."
+  case "", "1" ' hitting enter or 1
+    linefeeds% = 0 : linefeedstate$ = "LF Off" : print "Line Feeds will not be sent."
   case "2"
-    linefeeds% = 1
-    linefeedstate$ = "LF On"
-    print "Line Feeds will be sent."
+    linefeeds% = 1 : linefeedstate$ = "LF On" :  print "Line Feeds will be sent."
   case else
     print "Invalid Selection, please try again."
     pause 1200
@@ -411,18 +400,10 @@ print "1.No [DEFAULT]"
 print "2.Yes"
 input "Make Selection;"; echochoice$
 select case echochoice$
-  case "" ' hitting enter
-    echo% = 0 
-    echosetting$ = "Echo Off"
-    print "Local Echo is Off."
-  case "1"
-    echo% = 0
-    echosetting$ = "Echo Off"
-    print "Local Echo is Off."
+  case "", "1" ' hitting enter or 1
+    echo% = 0 : echosetting$ = "Echo Off" : print "Local Echo is Off."
   case "2"
-    echo% = 1
-    echosetting$ = "Echo On"
-    print "Local Echo is On."
+    echo% = 1 : echosetting$ = "Echo On"  : print "Local Echo is On."
   case else
     print "Invalid Selection, please try again."
     pause 1200
@@ -433,35 +414,26 @@ end sub
 
 
 
-
 sub setcomport
 print ""
 input "Choose COM Port, COM 1 [DEFAULT], 2, or 3 "; comchoice$
 select case comchoice$
-  case "" 'hitting enter
-      comportstr$ = "COM1"
-      comportnum% = 1
-      print "COM1 Selected."
-  case "1"
-    comportstr$ = "COM1" : comportnum% = 1
-    print "COM1 Selected."
+  case "", "1" 'hitting enter or 1
+    comportstr$ = "COM1" : comportnum% = 1 : print "COM1 Selected."
   case "2" 
-    comportstr$ = "COM2" : comportnum% = 2
-    print "COM2 Selected."
+    comportstr$ = "COM2" : comportnum% = 2 : print "COM2 Selected."
   case "3"
-      comportstr$ = "COM3" : comportnum% = 3
-      print "COM3 (via USB Type B port) Selected."
+    comportstr$ = "COM3" : comportnum% = 3 : print "COM3 (via USB Type B port) Selected."
         if mm.errno <> 0 then 
         Print "Error: ";mm.errmsg$,
       end if
-  case else 'invalid input
+  case else
       print "Invalid COM port, please try again."
       pause 1200 ' wait for them to read the response
       setcomport ' start over
 end select
 startcomport
 end sub
-
 
 
 
@@ -474,14 +446,10 @@ print "1) TTL Serial [DEFAULT]"
 print "2) RS-232 Serial"
 input "Make Selection: ", comtype$
 select case comtype$
-  case "" 'hitting enter
+  case "", "1" 'hitting enter or 1
     rs232% = 0 ' 0 means TTL
     comporttype$ = "TTL Serial" 'this string is important for the settings.cfg file!
     print "TTL Serial Selected."
-  case "1" 
-    rs232% = 0
-    comporttype$ = "TTL Serial"
-    print "TTL Serial Selected." 
   case "2"
     rs232% = 1 ' 1 is INVerted RS232 levels
     comporttype$ = "RS-232 Serial"
@@ -493,7 +461,6 @@ select case comtype$
 end select
 startcomport
 end sub
-
 
 
 
@@ -511,7 +478,7 @@ print "7) 57600 BPS"
 print "8) 115200 BPS [DEFAULT]"
 input "Make Selection: ", comspeedchoice$
   select case comspeedchoice$
-    case ""
+    case "", "8" ' the default choice is fastest
       print "115200 Selected." : comspeed$ = "115200"
     case "1"
       print "1200 Selected." : comspeed$ = "1200"
@@ -527,8 +494,6 @@ input "Make Selection: ", comspeedchoice$
       print "38400 Selected." : comspeed$ = "38400"
     case "7"
       print "57600 Selected." : comspeed$ = "57600"
-    case "8"
-      print "115200 Selected." : comspeed$ = "115200"
     case else
       print "Invalid selection. Please try again."
       pause 1200  
