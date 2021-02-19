@@ -1351,6 +1351,8 @@ sub _xmodem_dim
   dim xmodem_last_recv
   dim xmodem_up$
   dim xmodem_down$
+  dim xmodem_option_crnul%:xmodem_option_crnul%=1
+  dim xmodem_lastrx$:xmodem_lastrx$=""
 end sub '_xmodem_dim_const
 
 'XMODEM is simple algorithm
@@ -1448,6 +1450,12 @@ end sub '_serial_read
 sub _xmodem_handler serial$
   if len(serial$)=0 then exit 'sub
   xmodem_last_recv = timer
+  if xmodem_option_crnul%=1 and xmodem_lastrx$=chr$(13) and serial$=chr$(0) then
+    xmodem_lastrx$=serial$
+    return 'eat extra nul after cr from Zimodem
+  else
+    xmodem_lastrx$=serial$
+  end if
 
   'XMODEM state machine
   'state 0 - ready for block
