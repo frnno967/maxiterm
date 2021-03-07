@@ -1,7 +1,8 @@
 'Simple terminal program v 0.1 by Rich Martin (datawiz) 11:13pm 02 Oct 2020
 'Also code from Flashback.bas 1.0.0 by Rich Martin (datawiz)
 'Also code from vegipete for the GetFile routine
-'Version 1.9.2 John Crutti Jr 3-6-2021
+'Also code from davervw for Xmodem 07 Mar 2021
+'Version 1.9.3 John Crutti Jr 3-6-2021
 
 OPTION EXPLICIT
 
@@ -330,7 +331,7 @@ sub introscreen
   print @((ox+2)*fwidth%,(oy+4)*fheight%) "        for  the";
   print @((ox+2)*fwidth%,(oy+5)*fheight%) "    Color Maximite 2";
   print @((ox+2)*fwidth%,(oy+6)*fheight%) "";
-  print @((ox+2)*fwidth%,(oy+7)*fheight%) "       Version 1.9.2";
+  print @((ox+2)*fwidth%,(oy+7)*fheight%) "       Version 1.9.3";
   print @((ox+2)*fwidth%,(oy+8)*fheight%) "           by";
   print @((ox+2)*fwidth%,(oy+9)*fheight%) "       Jay Crutti";
   print @((ox+2)*fwidth%,(oy+10)*fheight%)"          2021";
@@ -1290,7 +1291,7 @@ End DefineFont
 ' MIT License
 '
 ' XMODEM receive for Color MaxiMite 2
-' Copyright (c) 2020 by David R. Van Wagner, Jay Crutti
+' Copyright (c) 2020-2021 by David R. Van Wagner, Jay Crutti
 ' https://github.com/davervw/cmm2_xmodem
 '
 ' Permission is hereby granted, free of charge, to any person obtaining a copy
