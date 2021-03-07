@@ -1,7 +1,7 @@
 'Simple terminal program v 0.1 by Rich Martin (datawiz) 11:13pm 02 Oct 2020
 'Also code from Flashback.bas 1.0.0 by Rich Martin (datawiz)
 'Also code from vegipete for the GetFile routine
-'Version 1.9.1 John Crutti Jr 1-28-2021
+'Version 1.9.2 John Crutti Jr 3-6-2021
 
 OPTION EXPLICIT
 ON ERROR IGNORE
@@ -26,7 +26,7 @@ dim NameOfFile$(1)  ' place to put chosen filename string, goes in element 0
 dim comportnum% = 1 ' COM port number as an integer for COM Port subroutine.
 dim comportstr$ = "COM1" ' COM port as a string for COM Port subroutine.
 dim comchoice$ = "1" ' used in COM selection subroutine.
-dim comspeedchoice$ = "8" ' used in COM Speed selection subroutine.
+dim comspeedchoice$ = "9" ' used in COM Speed selection subroutine.
 dim comspeed$ = "115200" ' COM Speed as a string for COM Speed subroutine.
 dim rs232% = 0 'start with TTL type serial port
 dim comporttype$ = "TTL Serial"
@@ -70,8 +70,11 @@ dim phonebookusername$(10) as string
 dim phonebookpassword$(10) as string
 dim phoneentry% = 0 'int of array value for the phone book
 dim dialchoice$ 'string of selections in autodial phone book screen
-
-
+dim second$ 'for blinking cursor
+dim numtime%, cycles%, underscore% 'for blinking cursor
+dim blinkingcursor% = 0 'for turning blinking cursor on or off
+dim x%, y%
+gui cursor load "cursor.spr"
 
 'main function
 cls
@@ -93,122 +96,105 @@ modeminit 'send modem setup string
 pause 500 'wait for modem to process
 modeminfo 'ask modem to print its info for the user
 do 'user input routine
+x% = mm.info(hpos)
+y% = mm.info(vpos)
+if blinkingcursor% = 1 then gui cursor x%,y%
+end if
 CHAR_OUT$ = INKEY$
 if CHAR_OUT$ <> "" then
   if CHAR_OUT$ = chr$(137) then download
     end if
   if CHAR_OUT$ = chr$(136) then upload
     end if
-feature$ = getchar$() 
+feature$ = getchar$()'typing processed by getchar routine to watch for modifier keys 
   if altflag% = 1 then 'check for ALT being asserted
   select case feature$ 'turn all characters to lowercase
       case "a" 'show the autodial phone book screen
-        phonebook
+        gui cursor off : phonebook
       case "b" 'set the COM port parameters again
+        gui cursor off 'hide blinking cursor if on
         onlineflag% = 0 'take us "offline" so we don't see incoming data during this.
-        cls
-        close #5 'close the COM port if it's already open.
-        setcomport
-        setcomspeed
-        terminalonline
-        startcomport
+        cls : close #5 'close the COM port if it's already open.
+        setcomport : setcomspeed : terminalonline : startcomport
       case "c" 'clear the existing screen contents
         text 400,300, "  CLEARING SCREEN  ", "CM",1,1, RGB(BLACK), RGB(WHITE)
-        pause 750  
-        welcomebanner      
-      case "d" 'leftovver from flashback terminal. Not sure what to do here yet.
+        pause 750 : welcomebanner      
+      case "d" ' Not implemented yet.
         if winflag% = 1 then
           if debug% = 0 then 
             colour rgb(black), rgb(red)
             print "*** Debug Mode On *** (NOT IMPLEMENTED)"
-          setupcolor
-          debug% = 1
+          setupcolor : debug% = 1
           else
             colour rgb(black), rgb(red)
             print "*** Debug Mode Off *** (NOT IMPLEMENTED)"
-          setupcolor
-          debug% = 0
+          setupcolor : debug% = 0
           end if
         else        
-          listfiles       
+          gui cursor off : listfiles       
         end if
       case "f" 'change the font color again
-        pickcolor
-        setupcolor
+        gui cursor off : pickcolor : setupcolor
       case "i" 're-initialize the modem
-        colour rgb(black), rgb(red)
-        print "*** SENDING MODEM INITIALIZATION ***"
-        setupcolor
-        modeminit
+        gui cursor off : colour rgb(black), rgb(red)
+        print "*** SENDING MODEM INITIALIZATION ***" : setupcolor : modeminit
       case "l" ' change the line feed TX setting
-        cls : changelinefeeds : welcomebanner
+        gui cursor off : cls : changelinefeeds : welcomebanner
       case "x" 'hangup the modem/close the connection
-        echo% = 0
-        hangup
+        echo% = 0 : hangup
       case "q" 'exit the terminal
         termexit
       case "s" 'enable annoying beep sound for every key press
         if soundflag% = 0 then
-          welcomebanner
-          text 400,300, "*** Sound On ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
-          setupcolor
-          print ""
-          pause 1000
-          welcomebanner
-          soundflag% = 1
+          gui cursor off
+          welcomebanner : text 400,300, "*** Sound On ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
+          setupcolor : print "" : pause 1000
+          welcomebanner : soundflag% = 1
         else
-          welcomebanner
-          text 400,300, "*** Sound Off ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
-          setupcolor
-          print ""
-          pause 1000
-          welcomebanner
-          soundflag% = 0
+          gui cursor off
+          welcomebanner : text 400,300, "*** Sound Off ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
+          setupcolor : print "" : pause 1000
+          welcomebanner : soundflag% = 0
         end if
       case "h" 'user help screen
-          cls
-          dialogHelp
-
+          gui cursor off : cls : dialogHelp
       case "e" 'turn on local echo in case modem isn't set to echo    
         if echo% = 1 then
-          welcomebanner
-          text 400,300, "*** Local Echo Off ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
-          setupcolor
-          print ""
-          pause 1000
-          echo% = 0 
-          echosetting$ = "Echo Off"
-          welcomebanner
+          gui cursor off
+          welcomebanner : text 400,300, "*** Local Echo Off ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
+          setupcolor : print "" : pause 1000
+          echo% = 0 : echosetting$ = "Echo Off" : welcomebanner
         else
-        text 400,300, "*** Local Echo On ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
-          setupcolor
-          print ""
-          pause 1000
-          echo% = 1
-          echosetting$ = "Echo On"
-          welcomebanner
+          gui cursor off
+          text 400,300, "*** Local Echo On ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
+          setupcolor : print "" : pause 1000
+          echo% = 1 : echosetting$ = "Echo On" : welcomebanner
         end if  
       case "p" 'show the current com port settings
-        comsettings  
+        gui cursor off : comsettings  
       case "v" 'show the credits screen
         if winflag% = 1 then 'credits screen takes ALT and WIN keys to show
           credits
         end if
       case "t" 'change the com port type, TTL or RS-232 levels 
-        setcomtype
-        startcomport
+        gui cursor off : setcomtype : startcomport
+      case "u" ' underline blinking cursor
+        if blinkingcursor% = 1 then
+          welcomebanner
+          text 400,300, "*** Blinking Cursor Off ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
+          setupcolor : print "" : pause 1000
+          blinkingcursor% = 0 : gui cursor off : welcomebanner
+        else
+        text 400,300, "*** Blinking Cursor On ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
+          setupcolor : print "" : pause 1000
+          blinkingcursor% = 1 : welcomebanner
+        end if
       case "r" 'run the initial modem setup routine again in case it gets wonky
         colour rgb(black), rgb(red)
-        print "*** RESETTING MODEM ***"
-        setupcolor
-        modemreset
-        pause 250
-        modeminit
-        pause 250
-        modeminfo  
+        print "*** RESETTING MODEM ***" : setupcolor : modemreset : pause 250
+        modeminit : pause 250 : modeminfo  
     end select
   else  
-blinkcursor
 print #5, CHAR_OUT$;
       if linefeeds% = 1 and CHAR_OUT$ = chr$(13) then    
         print #5, ""
@@ -220,6 +206,8 @@ end if
         print ""
       end if
   end if
+if blinkingcursor% = 1 then blinkcursor
+end if
 loop
 end
 
@@ -311,21 +299,16 @@ end if
 if keydown(7) = 0 then
 altflag% = 0 : winflag% = 0 : ctrlflag% = 0 : shiftflag% = 0
 end if
-lastmodifier% = keyflag%
-keyvalue% = keydown(1)
+lastmodifier% = keyflag% : keyvalue% = keydown(1)
   if keydown(0) > 0 and keylast% <> keyvalue% then
-      getchar$ = chr$(keyvalue%)    
-      getchar$ = lcase$(getchar$)
+      getchar$ = chr$(keyvalue%) : getchar$ = lcase$(getchar$)
   end if
-keylast% = keyvalue%
-pause 5
+keylast% = keyvalue% : pause 5
 end function
 
 
 sub introscreen
-  const ox = 35
-  const oy = 15
-  cls
+  const ox = 35 : const oy = 15 : cls
   box ox*fwidth%, oy*fheight%, 28*fwidth%, 14*fheight%, 1,,rgb(black)
   print @((ox+2)*fwidth%,(oy+1)*fheight%) "        MAXITERM";
   print @((ox+2)*fwidth%,(oy+2)*fheight%) "        --------";
@@ -333,7 +316,7 @@ sub introscreen
   print @((ox+2)*fwidth%,(oy+4)*fheight%) "        for  the";
   print @((ox+2)*fwidth%,(oy+5)*fheight%) "    Color Maximite 2";
   print @((ox+2)*fwidth%,(oy+6)*fheight%) "";
-  print @((ox+2)*fwidth%,(oy+7)*fheight%) "       Version 1.9.1";
+  print @((ox+2)*fwidth%,(oy+7)*fheight%) "       Version 1.9.2";
   print @((ox+2)*fwidth%,(oy+8)*fheight%) "           by";
   print @((ox+2)*fwidth%,(oy+9)*fheight%) "       Jay Crutti";
   print @((ox+2)*fwidth%,(oy+10)*fheight%)"          2021";
@@ -341,9 +324,9 @@ sub introscreen
   print @((ox+2)*fwidth%,(oy+12)*fheight%)"    www.jaycrutti.com";
 end sub
 
+
 sub welcomebanner
-cls
-print "Terminal running. ALT-Q to Exit. ALT-H for Help."
+cls : print "Terminal running. ALT-Q to Exit. ALT-H for Help."
 end sub
 
 
@@ -525,7 +508,7 @@ end sub
 
 
 sub startcomport
-  close #5
+close #5
     if rs232% = 1 then
       open comportstr$+":"+comspeed$+","+"256"+",get_serial_input"+",INV" as #5
     else
@@ -651,6 +634,7 @@ sub termexit
   colour rgb(black), rgb(red)
   print chr$(13); chr$(10); "*** EXITING TERMINAL ***"
   setupcolor
+  gui cursor off
 pause 750
 exit
 end sub
@@ -736,7 +720,7 @@ sub dialoghelp
   const ox = 30
   const oy = 15
   cls
-  box ox*fwidth%, oy*fheight%, 40*fwidth%, 23*fheight%, 1,,rgb(black)
+  box ox*fwidth%, oy*fheight%, 40*fwidth%, 24*fheight%, 1,,rgb(black)
   print @((ox+2)*fwidth%,(oy+1)*fheight%) "ALT-A Autodial Phone Book";
   print @((ox+2)*fwidth%,(oy+2)*fheight%) "ALT-B Quick Change COM Port Settings";
   print @((ox+2)*fwidth%,(oy+3)*fheight%) "ALT-C Clear Screen";
@@ -751,13 +735,14 @@ sub dialoghelp
   print @((ox+2)*fwidth%,(oy+12)*fheight%)"ALT-R Reset the Modem";
   print @((ox+2)*fwidth%,(oy+13)*fheight%)"ALT-S Key Sound on/off";
   print @((ox+2)*fwidth%,(oy+14)*fheight%)"ALT-T Change Com Port Type";
-  print @((ox+2)*fwidth%,(oy+15)*fheight%)"ALT-X Disconnect Session";
-  print @((ox+2)*fwidth%,(oy+16)*fheight%)"";
-  print @((ox+2)*fwidth%,(oy+17)*fheight%)"Page UP = Upload File";
-  print @((ox+2)*fwidth%,(oy+18)*fheight%)"Page DOWN = Download File";
-  print @((ox+2)*fwidth%,(oy+19)*fheight%)"";
-  print @((ox+2)*fwidth%,(oy+20)*fheight%)"ALT+WIN-D Toggle debug on/off";
-  print @((ox+2)*fwidth%,(oy+21)*fheight%)"ALT+WIN-V Show Version info";
+  print @((ox+2)*fwidth%,(oy+15)*fheight%)"ALT-U Toggle Blinking Cursor";
+  print @((ox+2)*fwidth%,(oy+16)*fheight%)"ALT-X Disconnect Session";
+  print @((ox+2)*fwidth%,(oy+17)*fheight%)"";
+  print @((ox+2)*fwidth%,(oy+18)*fheight%)"Page UP = Upload File";
+  print @((ox+2)*fwidth%,(oy+19)*fheight%)"Page DOWN = Download File";
+  print @((ox+2)*fwidth%,(oy+20)*fheight%)"";
+  print @((ox+2)*fwidth%,(oy+21)*fheight%)"ALT+WIN-D Toggle debug on/off";
+  print @((ox+2)*fwidth%,(oy+22)*fheight%)"ALT+WIN-V Show Version info";
   do while inkey$ = "" : loop
 welcomebanner
 end sub
@@ -769,7 +754,7 @@ sub credits
   box ox*fwidth%, oy*fheight%, 40*fwidth%, 15*fheight%, 1,,rgb(black)
   print @((ox+2)*fwidth%,(oy+1)*fheight%) "Maxiterm for the Color Maximite 2";
   print @((ox+2)*fwidth%,(oy+2)*fheight%) "---------------------------------";
-  print @((ox+2)*fwidth%,(oy+3)*fheight%) "Version 1.9.1";
+  print @((ox+2)*fwidth%,(oy+3)*fheight%) "Version 1.9.2";
   print @((ox+2)*fwidth%,(oy+4)*fheight%) "John 'Jay' Crutti Jr. and friends. ";
   print @((ox+2)*fwidth%,(oy+5)*fheight%) "Copyright 2021, MIT LICENSE";
   print @((ox+2)*fwidth%,(oy+6)*fheight%) "";
@@ -922,30 +907,32 @@ end sub
 
 
 sub blinkcursor 'future feature
-  local x%, y%
-  x% = xpos%
-  y% = ypos%
-'  select case cursortype%
-'  case 0
-'    print @((x%+xoffset%)*fwidth%,(y%+yoffset%)*fheight%) " ";
-'    print @((x%+xoffset%)*fwidth%,(y%+yoffset%)*fheight%) "_";
-'  case 1
-'    print @((x%+xoffset%)*fwidth%,(y%+yoffset%)*fheight%) "/";
-'    print @((x%+xoffset%)*fwidth%,(y%+yoffset%)*fheight%) "-";
-'    print @((x%+xoffset%)*fwidth%,(y%+yoffset%)*fheight%) "\";
-'    print @((x%+xoffset%)*fwidth%,(y%+yoffset%)*fheight%) "|";
-'  case 2
-'    print @((x%+xoffset%)*fwidth%,(y%+yoffset%)*fheight%) ":";
-'    print @((x%+xoffset%)*fwidth%,(y%+yoffset%)*fheight%) "-";
-'  case 3
-'    print @((x%+xoffset%)*fwidth%,(y%+yoffset%)*fheight%) "<";
-'    print @((x%+xoffset%)*fwidth%,(y%+yoffset%)*fheight%) "^";
-'    print @((x%+xoffset%)*fwidth%,(y%+yoffset%)*fheight%) ">";
-'    print @((x%+xoffset%)*fwidth%,(y%+yoffset%)*fheight%) "v";
-'  end select
-'  print @((x%+xoffset%)*fwidth%,(y%+yoffset%)*fheight%) scr_text$(x%,y%);
-'  print @((x%+xoffset%)*fwidth%,(y%+yoffset%)*fheight%) CHARS_OUT$(x%,y%);
+  local fwidth%, fheight%, xoffset%, yoffset%
+fheight% = mm.info(fontheight)
+fwidth% = mm.info(fontwidth)
+xoffset% = x%+fwidth%
+yoffset% = y%+fheight%
+second$ = right$(time$, 1)
+numtime% = val(second$)
+
+if chars_out$ = "" then
+  if numtime% <> cycles% and underscore% = 1 then
+    gui cursor on 2,x%,y%
+    let cycles% = numtime%
+    underscore% = 0
+  end if
+    if numtime% <> cycles% and underscore% = 0 then
+      gui cursor off
+      let cycles% = numtime%
+      underscore% = 1
+    end if
+end if
 end sub
+
+sub disableblink
+gui cursor off
+end sub
+
 
 
 '*****************************************************************
