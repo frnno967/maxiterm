@@ -1,3 +1,6 @@
+v1.9.2:
+-added blinking cursor functionality using GUI CURSOR capability. 
+
 v1.9.1:
 -Refactor code handling modifier key input. Added support for future use of Shift and Control keys.
 -Added Local Echo option to COM settings menu, added parameter to settings.cfg file.
