@@ -89,7 +89,7 @@ dim second$ 'for blinking cursor
 dim numtime%, cycles%, underscore% 'for blinking cursor
 dim blinkingcursor% = 0 'for turning blinking cursor on or off
 dim x%, y%
-gui cursor load "cursor.spr"
+gui cursor load "cursor.spr" 'cursor sprite for blinking cursor function
 
 'main function
 cls
@@ -574,7 +574,7 @@ end sub
 
 sub download
 cls
-  print "Xmodem Download (REQUIRES 5.05.06 or higher firmware)"
+  print "Xmodem Download"
   input "Enter Filename: "; receivefile$
    if receivefile$ = "" then
     colour rgb(black), rgb(red)
@@ -586,10 +586,10 @@ cls
 else
   onlineflag% = 0
   print "Please wait, downloading "; receivefile$
-  '    XMODEM R receivefile$, comportnum%
+  print ""
   _xmodem_recv receivefile$
-  if mm.errno <> 0 then
-    Print "Download Error: ";mm.errmsg$,
+'  if mm.errno <> 0 then
+'    Print "Download Error: ";mm.errmsg$,
     onlineflag% = 1
   end if
   if mm.errno = 0 then
@@ -604,7 +604,7 @@ end sub
 
 sub upload
 cls
-print "Xmodem Upload (REQUIRES 5.05.06 or higher firmware)"
+print "Xmodem Upload"
 FileDialog(NameOfFile$())   ' no options so allow any file to be selected
   if NameOfFile$(0) = "" then
     welcomebanner
@@ -616,12 +616,11 @@ FileDialog(NameOfFile$())   ' no options so allow any file to be selected
   else
     cls
     print "Please wait, uploading "; NameOfFile$(0)
-    '  XMODEM S NameOfFile$(0), comportnum%
     _xmodem_send NameOfFile$(0)
   end if
-  if mm.errno <> 0 then Print "Upload Error: ";mm.errmsg$
-      end if
-    print "Exiting Upload."
+'  if mm.errno <> 0 then Print "Upload Error: ";mm.errmsg$
+'      end if
+'    print "Exiting Upload."
   end if
 end sub
 
@@ -1371,12 +1370,15 @@ end sub '_xmodem_dim_const
 sub _dumb_terminal
   option crlf lf
 if len(xmodem_down$)>0 then
-  print "XMODEM receive capable"
-  print "^U to receive"
-  print "^X to cancel transmission"
+  print ""
+  print "XMODEM download ready."
+  print "----------------------"
+  print "Type Control-U to begin receive."
+  print "Type Control-X to cancel transfer."
 end if
 if len(xmodem_up$)>0 then
-  print "XMODEM upload capable"
+  print ""
+  print "XMODEM upload ready."
 end if
 
   xmodem_last_recv = timer
@@ -1488,8 +1490,6 @@ sub _xmodem_handler serial$
             print #5,ack$; ' Signal Received End of Transmission
             xmodem_block%=1
             xmodem_down$=""
-            ' note does not change state yet, waits for ACK
-            ' Jay: need to test scenario send EOT recv NAK, send EOT again recv ACK to really be done.
          else
             if serial$=cr$ or serial$=lf$ or serial$=bs$ or serial$=bel$ then
               if serial$ <> bel$ then
@@ -1635,7 +1635,7 @@ sub _xmodem_status_progress
   else
     status$=status$+" Receiving"
   end if
-  status$=status$+" #"+STR$(xmodem_block%)+" "+STR$(xmodem_errors%)+" errs "
+  status$=status$+" #"+STR$(xmodem_block%)+" "+STR$(xmodem_errors%)+" errors "
 
   _xmodem_status_text status$
 end sub '_xmodem_status_progress
