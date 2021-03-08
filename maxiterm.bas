@@ -119,7 +119,8 @@ CHAR_OUT$ = INKEY$
 if CHAR_OUT$ <> "" then
   if CHAR_OUT$ = chr$(137) then download
     end if
-  if CHAR_OUT$ = chr$(136) then upload
+  if CHAR_OUT$ = chr$(136) then 
+      CHAR_OUT$ = "" : upload
     end if
 feature$ = getchar$()'typing processed by getchar routine to watch for modifier keys 
   if altflag% = 1 then 'check for ALT being asserted
