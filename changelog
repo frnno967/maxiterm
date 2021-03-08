@@ -1,3 +1,6 @@
+v1.9.3:
+-initial commit of Dave's Xmodem software routines in anticipation of v2.0.
+
 v1.9.2:
 -added blinking cursor functionality using GUI CURSOR capability. 
 
