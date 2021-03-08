@@ -2,7 +2,6 @@ Planned features:
 Software Routines for Xmodem-Ymodem-Zmodem File Transfer support, transfer progress windows
 ANSI color support
 RS-232 options other than 8-N-1, Flow Control (RTS/CTS & Xon/Xoff) support
-Visible Cursor support
 Ability to change sound of keypress sound mode
 Saving/Recall of ALL configuration parameters (queued for v2)
 Correct operation of Backspace erasing the existing text
@@ -13,4 +12,4 @@ Different font/type options
 Archiving/Unarchiving for file transfers from within the program
 
 Bugs:
-Current (v1.9) Xmodem firmware routines are unstable for uploading except using COM3 or RS-232 serial connection.
+Blinking cursor support is currently only for white font color and may not be compatible with CMM2 firmware > 5.06.
