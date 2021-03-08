@@ -776,7 +776,7 @@ sub credits
   box ox*fwidth%, oy*fheight%, 40*fwidth%, 15*fheight%, 1,,rgb(black)
   print @((ox+2)*fwidth%,(oy+1)*fheight%) "Maxiterm for the Color Maximite 2";
   print @((ox+2)*fwidth%,(oy+2)*fheight%) "---------------------------------";
-  print @((ox+2)*fwidth%,(oy+3)*fheight%) "Version 1.9.2";
+  print @((ox+2)*fwidth%,(oy+3)*fheight%) "Version 1.9.3";
   print @((ox+2)*fwidth%,(oy+4)*fheight%) "John 'Jay' Crutti Jr. and friends. ";
   print @((ox+2)*fwidth%,(oy+5)*fheight%) "Copyright 2021, MIT LICENSE";
   print @((ox+2)*fwidth%,(oy+6)*fheight%) "";
@@ -1273,7 +1273,7 @@ End DefineFont
 '//////////////////////////////////////////////////////////////////////////////
 '
 ' /////////////////////
-' // xmodem_cmm2.bas // (C) 2021 David R. Van Wagner, Jay Crutti MIT LICENSE
+' // xmodem_cmm2.bas // (C) 2021 David R. Van Wagner, John A. Crutti Jr MIT LICENSE
 ' /////////////////////
 '
 ' XMODEM receive for Color MaxiMite 2
@@ -1291,7 +1291,7 @@ End DefineFont
 ' MIT License
 '
 ' XMODEM receive for Color MaxiMite 2
-' Copyright (c) 2020-2021 by David R. Van Wagner, Jay Crutti
+' Copyright (c) 2020-2021 by David R. Van Wagner, John A. Crutti Jr
 ' https://github.com/davervw/cmm2_xmodem
 '
 ' Permission is hereby granted, free of charge, to any person obtaining a copy
