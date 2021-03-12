@@ -110,6 +110,7 @@ pause 500 ' wait for modem to process
 modeminit 'send modem setup string
 pause 500 'wait for modem to process
 modeminfo 'ask modem to print its info for the user
+linefeeds% = 0 'reset LF state due to OPTION CRLF above.
 do 'user input routine
 x% = mm.info(hpos)
 y% = mm.info(vpos)
