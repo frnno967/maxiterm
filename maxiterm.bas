@@ -110,7 +110,7 @@ pause 500 ' wait for modem to process
 modeminit 'send modem setup string
 pause 500 'wait for modem to process
 modeminfo 'ask modem to print its info for the user
-linefeeds% = 0 'reset LF state due to OPTION CRLF above.
+linefeeds% = 0
 do 'user input routine
 x% = mm.info(hpos)
 y% = mm.info(vpos)
@@ -121,7 +121,7 @@ if CHAR_OUT$ <> "" then
   if CHAR_OUT$ = chr$(137) then download
     end if
   if CHAR_OUT$ = chr$(136) then 
-      CHAR_OUT$ = "" : upload
+    CHAR_OUT$ = "" : upload
     end if
 feature$ = getchar$()'typing processed by getchar routine to watch for modifier keys 
   if altflag% = 1 then 'check for ALT being asserted
@@ -1432,7 +1432,7 @@ sub _xmodem_timer_handler key$
         end if
       end if
       if xmodem_errors% >= 10 and xmodem_block%<>0 then
-        'print "FAILED"
+        print "" : print "TRANSFER FAILED"
         '_cursor_maintain_reset
         close #1
         xmodem_block%=1
