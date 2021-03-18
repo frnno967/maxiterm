@@ -6,19 +6,6 @@
 
 OPTION EXPLICIT
 
-_xmodem_dim
-
-'commented code for bare bones with xmodem dumb terminal testing (COM3 only)
-'dim debug%:debug%=0
-'_cursor_dim
-'_cursor_enable
-'cursor_mode = 2 ' 1=double height underline, 2=reverse cell
-'open "com3:115200,8192,_serial_read" as #5 ' open serial
-'xmodem_up$="FILE.SND"
-'xmodem_down$="FILE.RCV"
-'_dumb_terminal
-'end
-
 ON ERROR IGNORE
 OPTION CRLF CRLF
 OPTION CONSOLE SCREEN
@@ -89,6 +76,8 @@ dim second$ 'for blinking cursor
 dim numtime%, cycles%, underscore% 'for blinking cursor
 dim blinkingcursor% = 0 'for turning blinking cursor on or off
 dim x%, y%
+_xmodem_dim
+
 gui cursor load "cursor.spr"
 
 'main function
@@ -117,11 +106,14 @@ if blinkingcursor% = 1 then gui cursor x%,y%
 end if
 CHAR_OUT$ = INKEY$
 if CHAR_OUT$ <> "" then
-  if CHAR_OUT$ = chr$(137) then download
-    end if
-  if CHAR_OUT$ = chr$(136) then upload
-    end if
-feature$ = getchar$()'typing processed by getchar routine to watch for modifier keys 
+  if CHAR_OUT$ = chr$(137) then
+    download
+    CHAR_OUT$ = ""
+  else if CHAR_OUT$ = chr$(136) then
+    upload
+    CHAR_OUT$ = ""
+  end if
+feature$ = getchar$()'typing processed by getchar routine to watch for modifier keys
   if altflag% = 1 then 'check for ALT being asserted
   select case feature$ 'turn all characters to lowercase
       case "a" 'show the autodial phone book screen
@@ -133,7 +125,7 @@ feature$ = getchar$()'typing processed by getchar routine to watch for modifier 
         setcomport : setcomspeed : terminalonline : startcomport
       case "c" 'clear the existing screen contents
         text 400,300, "  CLEARING SCREEN  ", "CM",1,1, RGB(BLACK), RGB(WHITE)
-        pause 750 : welcomebanner      
+        pause 750 : welcomebanner
       case "d" ' Not implemented yet.
         if winflag% = 1 then
           if debug% = 0 then
@@ -145,8 +137,8 @@ feature$ = getchar$()'typing processed by getchar routine to watch for modifier 
             print "*** Debug Mode Off *** (NOT IMPLEMENTED)"
           setupcolor : debug% = 0
           end if
-        else        
-          gui cursor off : listfiles       
+        else
+          gui cursor off : listfiles
         end if
       case "f" 'change the font color again
         gui cursor off : pickcolor : setupcolor
@@ -173,7 +165,7 @@ feature$ = getchar$()'typing processed by getchar routine to watch for modifier 
         end if
       case "h" 'user help screen
           gui cursor off : cls : dialogHelp
-      case "e" 'turn on local echo in case modem isn't set to echo    
+      case "e" 'turn on local echo in case modem isn't set to echo
         if echo% = 1 then
           gui cursor off
           welcomebanner : text 400,300, "*** Local Echo Off ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
@@ -184,14 +176,14 @@ feature$ = getchar$()'typing processed by getchar routine to watch for modifier 
           text 400,300, "*** Local Echo On ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
           setupcolor : print "" : pause 1000
           echo% = 1 : echosetting$ = "Echo On" : welcomebanner
-        end if  
+        end if
       case "p" 'show the current com port settings
-        gui cursor off : comsettings  
+        gui cursor off : comsettings
       case "v" 'show the credits screen
         if winflag% = 1 then 'credits screen takes ALT and WIN keys to show
           credits
         end if
-      case "t" 'change the com port type, TTL or RS-232 levels 
+      case "t" 'change the com port type, TTL or RS-232 levels
         gui cursor off : setcomtype : startcomport
       case "u" ' underline blinking cursor
         if blinkingcursor% = 1 then
@@ -207,9 +199,9 @@ feature$ = getchar$()'typing processed by getchar routine to watch for modifier 
       case "r" 'run the initial modem setup routine again in case it gets wonky
         colour rgb(black), rgb(red)
         print "*** RESETTING MODEM ***" : setupcolor : modemreset : pause 250
-        modeminit : pause 250 : modeminfo  
+        modeminit : pause 250 : modeminfo
     end select
-  else  
+  else
 print #5, CHAR_OUT$;
       if linefeeds% = 1 and CHAR_OUT$ = chr$(13) then
         print #5, ""
@@ -418,11 +410,11 @@ input "Choose COM Port, COM 1 [DEFAULT], 2, or 3 "; comchoice$
 select case comchoice$
   case "", "1" 'hitting enter or 1
     comportstr$ = "COM1" : comportnum% = 1 : print "COM1 Selected."
-  case "2" 
+  case "2"
     comportstr$ = "COM2" : comportnum% = 2 : print "COM2 Selected."
   case "3"
     comportstr$ = "COM3" : comportnum% = 3 : print "COM3 (via USB Type B port) Selected."
-        if mm.errno <> 0 then 
+        if mm.errno <> 0 then
         Print "Error: ";mm.errmsg$,
       end if
   case else
@@ -574,7 +566,7 @@ end sub
 
 sub download
 cls
-  print "Xmodem Download (REQUIRES 5.05.06 or higher firmware)"
+  print "Xmodem Download"
   input "Enter Filename: "; receivefile$
    if receivefile$ = "" then
     colour rgb(black), rgb(red)
@@ -586,25 +578,14 @@ cls
 else
   onlineflag% = 0
   print "Please wait, downloading "; receivefile$
-  '    XMODEM R receivefile$, comportnum%
   _xmodem_recv receivefile$
-  if mm.errno <> 0 then
-    Print "Download Error: ";mm.errmsg$,
-    onlineflag% = 1
-  end if
-  if mm.errno = 0 then
-    onlineflag% = 0
-    print chr$(13); chr$(10);"Download Complete.",
-    print ""
-    onlineflag% = 1
-  end if
 end sub
 
 
 
 sub upload
 cls
-print "Xmodem Upload (REQUIRES 5.05.06 or higher firmware)"
+print "Xmodem Upload"
 FileDialog(NameOfFile$())   ' no options so allow any file to be selected
   if NameOfFile$(0) = "" then
     welcomebanner
@@ -616,12 +597,7 @@ FileDialog(NameOfFile$())   ' no options so allow any file to be selected
   else
     cls
     print "Please wait, uploading "; NameOfFile$(0)
-    '  XMODEM S NameOfFile$(0), comportnum%
     _xmodem_send NameOfFile$(0)
-  end if
-  if mm.errno <> 0 then Print "Upload Error: ";mm.errmsg$
-      end if
-    print "Exiting Upload."
   end if
 end sub
 
@@ -1270,65 +1246,12 @@ DefineFont #11
 End DefineFont
 '*****************************************************************
 
-'//////////////////////////////////////////////////////////////////////////////
-'
-' /////////////////////
-' // xmodem_cmm2.bas // (C) 2021 David R. Van Wagner, John A. Crutti Jr MIT LICENSE
-' /////////////////////
-'
-' XMODEM receive for Color MaxiMite 2
-'
-'//////////////////////////////////////////////////////////////////////////////
-'
-' OPEN SOURCE - MIT License Paraphrased (See MIT License for full details)
-'
-' 1. Always give credit where credit is due, with conditions:
-' 2. Do whatever else you want with the source code or binaries, as is or revise
-' 3. No liability assumed for any potential problems
-'
-'//////////////////////////////////////////////////////////////////////////////
-'
-' MIT License
-'
-' XMODEM receive for Color MaxiMite 2
-' Copyright (c) 2020-2021 by David R. Van Wagner, John A. Crutti Jr
-' https://github.com/davervw/cmm2_xmodem
-'
-' Permission is hereby granted, free of charge, to any person obtaining a copy
-' of this software and associated documentation files (the "Software"), to deal
-' in the Software without restriction, including without limitation the rights
-' to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-' copies of the Software, and to permit persons to whom the Software is
-' furnished to do so, subject to the following conditions:
-'
-' The above copyright notice and this permission notice shall be included in all
-' copies or substantial portions of the Software.
-'
-' THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-' IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-' FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-' AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-' LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-' OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-' SOFTWARE.
-'
-'//////////////////////////////////////////////////////////////////////////////
 
-'
-' TODO:
-'
-' ESP8266 WI-FI MODEM SUPPORT
-' TELNET SEND SUPPORT (binary file currently fails to send, telnet escape character?)
-' XMODEM-1K
-' XMODEM CRC
-' XFER FILENAME
-' GITHUB PRIVATE ORGANIZATION
-' FIX STATE 4 - NEED TO EAT BAD BLOCK BEFORE ERROR AGAIN
-' XMODEM UNIT TESTS (SUCCESS/FAILURE CASES)
-' INTEGRATE INTO MAXITERM
-
-'option crlf lf ' ENTER key is LF
-'option explicit ' require variable types to be explicitly stated or declared
+'//////////////////////////////////////////////////////////////////////////////
+' XMODEM receive for Color MaxiMite 2
+' (C) 2021 David R. Van Wagner, John A. Crutti Jr
+' MIT LICENSE
+'//////////////////////////////////////////////////////////////////////////////
 
 sub _xmodem_dim
   dim nak$:nak$=chr$(21) '^U
@@ -1342,7 +1265,7 @@ sub _xmodem_dim
   dim bs$:bs$=chr$(8)    '^H
   dim bel$:bel$=chr$(7)  '^G
   dim stx$:stx$=chr$(2)  '^B and STX is used to indicate a 1K packet
-  'C used by receiver to indicate preference for CRC
+  'dim crc$:crc$='C'
 
   dim xmodem_sum%
   dim xmodem_block%:xmodem_block%=1
@@ -1368,15 +1291,11 @@ end sub '_xmodem_dim_const
 '10 second timeout to get SOH, max 10 errors, about 90 seconds timeout at start
   'block receive timeout is 7 seconds
 
-sub _dumb_terminal
+sub _xmodem_terminal
   option crlf lf
 if len(xmodem_down$)>0 then
-  print "XMODEM receive capable"
   print "^U to receive"
   print "^X to cancel transmission"
-end if
-if len(xmodem_up$)>0 then
-  print "XMODEM upload capable"
 end if
 
   xmodem_last_recv = timer
@@ -1387,18 +1306,16 @@ end if
     if len(key$) > 0 then
       print #5;key$;
       _xmodem_timer_handler key$
-    else
-    '_cursor_maintain
     end if
     _xmodem_timer_handler ""
   loop while xmodem_up$<>"" AND xmodem_down$<>""
 
   option crlf crlf
-end sub '_dumb_terminal
+end sub '_xmodem_terminal
 
 sub _xmodem_send xmodem_filename$
   xmodem_up$ = xmodem_filename$
-  _dumb_terminal
+  _xmodem_terminal
 end sub
 
 sub _xmodem_recv xmodem_filename$
@@ -1416,7 +1333,6 @@ sub _xmodem_timer_handler key$
     if xmodem_block% > 1 then
       if xmodem_state%=0 or xmodem_state%=4 then ' didn't receive block
         'print "TIMEOUT"
-        '_cursor_maintain_reset
         xmodem_errors%=xmodem_errors%+1
       else
         if xmodem_state%=5 then
@@ -1429,7 +1345,6 @@ sub _xmodem_timer_handler key$
       end if
       if xmodem_errors% >= 10 and xmodem_block%<>0 then
         'print "FAILED"
-        '_cursor_maintain_reset
         close #1
         xmodem_block%=1
         xmodem_down$=""
@@ -1473,7 +1388,7 @@ sub _xmodem_handler serial$
             open xmodem_down$ for output as #1
          end if
          xmodem_state%=1
-         if debug% then print "<SOH>";':_cursor_maintain_reset
+         if debug% then print "<SOH>";
       else if xmodem_block%=1 and serial$=nak$ and len(xmodem_up$)<>0 then
          open xmodem_up$ for input as #2
          xmodem_buffer$=input$(128,#2)
@@ -1482,8 +1397,8 @@ sub _xmodem_handler serial$
       else
          if xmodem_block%>1 and serial$=eot$ then
             if debug% then print "<EOT> Success!"
-            '_cursor_maintain_reset
-            _xmodem_status_text " XMODEM Receiving Success"
+            _xmodem_status_clear
+            print "[ XMODEM Receiving Success ]"
             close #1
             print #5,ack$; ' Signal Received End of Transmission
             xmodem_block%=1
@@ -1493,7 +1408,6 @@ sub _xmodem_handler serial$
          else
             if serial$=cr$ or serial$=lf$ or serial$=bs$ or serial$=bel$ then
               if serial$ <> bel$ then
-                '_cursor_maintain_hide
                 if debug% then
                   print "<x";hex$(asc(serial$),2);">";
                   if serial$=cr$ then serial$=cr$+lf$
@@ -1503,10 +1417,8 @@ sub _xmodem_handler serial$
             else
               if asc(serial$)<32 or asc(serial$)>126 then
                 print "<x";hex$(asc(serial$),2);">";
-                '_cursor_maintain_reset
               else
                 print serial$;
-                '_cursor_maintain_reset
               end if
             end if
          end if
@@ -1514,21 +1426,17 @@ sub _xmodem_handler serial$
     case 1: 'soh received, waiting for blk#
       if serial$<>chr$(xmodem_block% and 255) then
          print "<??";asc(serial$);"??>";
-         '_cursor_maintain_reset
          xmodem_state%=4
       else
          if debug% then print "<BLK";xmodem_block% and 255;">";
-         '_cursor_maintain_reset
          xmodem_state%=2
       end if
     case 2: ' blk# received, waiting for inverse blk#
       if serial$<>chr$((xmodem_block% and 255) xor 255) then
          print "<??";asc(serial$);"??>";
-         '_cursor_maintain_reset
          xmodem_state%=4
       else
          if debug% then print "<~BLK";asc(serial$);">";
-         '_cursor_maintain_reset
          xmodem_state%=3:xmodem_buffer$="":xmodem_sum%=0
       end if
     case 3: ' receiving block, waiting for complete block including checksum
@@ -1538,30 +1446,26 @@ sub _xmodem_handler serial$
          'print "<";len(xmodem_buffer$);":";asc(serial$)">";
          if len(xmodem_buffer$) = 128 then
             if debug% then print "<128 BYTES>";
-            '_cursor_maintain_reset
          end if
       else
          if xmodem_sum% = asc(serial$) then
             if debug% then print "<SUM";xmodem_sum%;">"
-            '_cursor_maintain_reset
             xmodem_block% = xmodem_block% + 1
             print #1,xmodem_buffer$;
             print #5,ack$; ' signal received block
             xmodem_state%=0
          else
             print "<SUM";asc(serial$);"!=";xmodem_sum%;">"
-            '_cursor_maintain_reset
             print #5,nak$; ' Signal Problem in Communication
             xmodem_state%=1
          end if
       end if
     case 4: ' receiving error block, waiting for timeout
-      if debug% then print "TIMEOUT" ': _cursor_maintain_reset
+      if debug% then print "TIMEOUT"
       xmodem_errors%=xmodem_errors%+1
       xmodem_buffer$=""
       if xmodem_errors% == 10 then
          print "FAILED"
-         '_cursor_maintain_reset
          xmodem_state%=0
          close #1
          xmodem_block%=1
@@ -1570,12 +1474,10 @@ sub _xmodem_handler serial$
     case 5: 'sending, waiting for ACK
       if serial$=ack$ then
          if debug% then print "<ACK>"
-         '_cursor_maintain_reset
          if len(xmodem_buffer$) > 0 then
            xmodem_buffer$ = input$(128, #2) ' get next block
            if len(xmodem_buffer$) = 0 then
              if debug% then print "Wrapping up";
-             '_cursor_maintain_reset
              print #5,eot$;
            else
              xmodem_block%=xmodem_block%+1
@@ -1583,8 +1485,8 @@ sub _xmodem_handler serial$
            end if
          else
            if debug% then print "Success!!!"
-           _xmodem_status_text " XMODEM Sending Success"
-           '_cursor_maintain_reset
+           _xmodem_status_clear
+           print "[ XMODEM Sending Success ]"
            xmodem_state%=0
            xmodem_block%=1
            close #2
@@ -1593,11 +1495,9 @@ sub _xmodem_handler serial$
       else
          if serial$=nak$ then
            if debug% then print "<NAK>"
-           '_cursor_maintain_reset
            _xmodem_send_buffer
          else if serial$=can$ then
            if debug% then print "<CAN>"
-           '_cursor_maintain_reset
            xmodem_state%=0
            xmodem_block%=1
            close #2
@@ -1611,7 +1511,6 @@ end sub
 sub _xmodem_send_buffer
   local i
   if debug% then print "<BLOCK";xmodem_block% and 255;">";
-  '_cursor_maintain_reset
   if len(xmodem_buffer$)<128 then
     do
       xmodem_buffer$=xmodem_buffer$+eof$
@@ -1661,15 +1560,5 @@ sub _xmodem_status_text status$
 end sub '_xmodem_status_text
 
 sub _xmodem_status_clear
-  'local status$, cols, add, i
-  'cols = mm.hres/mm.info(fontwidth)
-  'add = cols-1
-  'status$ = ""
-  'for i = 1 to add : status$=status$+" " : next i
-  '_xmodem_status_text status$
   box 0, mm.vres-mm.info(fontheight), mm.hres, mm.info(fontheight), 0, , rgb(black)
 end sub '_xmodem_status_clear
-
-'//////////////////////////////////////////////////////////////////////////////
-' END - XMODEM receive for Color MaxiMite 2
-'//////////////////////////////////////////////////////////////////////////////
