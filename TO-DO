@@ -12,4 +12,5 @@ Different font/type options
 Archiving/Unarchiving for file transfers from within the program
 
 Bugs:
+Check for presence of settings.cfg file and bypass COM, BAUD, and Font prompts at startup if present.
 Blinking cursor support is currently only for white font color and may not be compatible with CMM2 firmware > 5.06.
