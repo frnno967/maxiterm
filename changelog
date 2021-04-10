@@ -1,3 +1,7 @@
+v1.9.4:
+-added recall/save of COM port settings to settings.cfg. Prompts only show at startup if settings.cfg is missing.
+-removed unused variables
+
 v1.9.3:
 -initial commit of Dave's Xmodem software routines in anticipation of v2.0.
 -fixed LF bug where linefeeds% was being changed to 1 due to OPTION CRLF.
