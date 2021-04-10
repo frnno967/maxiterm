@@ -2,7 +2,7 @@
 'Also code from Flashback.bas 1.0.0 by Rich Martin (datawiz)
 'Also code from vegipete for the GetFile routine
 'Also code from davervw for Xmodem 07 Mar 2021
-'Version 1.9.3 John Crutti Jr 3-6-2021
+'Version 1.9.4 John Crutti Jr 4-10-2021
 
 OPTION EXPLICIT
 
@@ -38,13 +38,12 @@ DIM d_colours(3) = (&hA0A040,&h101010,&hFFFFFF,&h303030) 'array of 4 colour valu
 dim NameOfFile$(1)  ' place to put chosen filename string, goes in element 0
 '===================
 
-dim comportnum% = 1 ' COM port number as an integer for COM Port subroutine.
 dim comportstr$ = "COM1" ' COM port as a string for COM Port subroutine.
 dim comchoice$ = "1" ' used in COM selection subroutine.
 dim comspeedchoice$ = "9" ' used in COM Speed selection subroutine.
 dim comspeed$ = "115200" ' COM Speed as a string for COM Speed subroutine.
 dim rs232% = 0 'start with TTL type serial port
-dim comporttype$ = "TTL Serial"
+dim comporttype$ = "TTL Serial" 'default to TTL signals for ESP modules
 dim CHAR_OUT$ 'characters we're typing at the console to be sent to modem
 dim altflag% 'is ALT key pressed?
 dim winflag% 'is WINDOWS key pressed?
@@ -69,6 +68,7 @@ dim xpos% = 0
 dim ypos% = 0
 dim receivefile$ 'filename of file we're downloading
 dim text_color = 1 'used in setting font color choice
+dim text_colorstr$ 'string for saving text color choice
 dim feature$ 'output of getchar function to select program features
 dim modemresetstring$ = "ATZ" 'command to reset the modem
 dim modeminitstring$ = "ATE1V1X0Q0s40=512s0=1s41=1f0" 'command used to configure the modem
@@ -81,14 +81,15 @@ dim TERM_COLOR2 = 255 'init value for white
 dim TERM_COLOR3 = 255 'init value for white
 dim debug% 'for future debug mode
 dim phonebookentry$(10) as string ' array holding the user's phone book
-dim phonebookusername$(10) as string
-dim phonebookpassword$(10) as string
+dim phonebookusername$(10) as string 'array holding user's login name
+dim phonebookpassword$(10) as string 'array holding user's password
 dim phoneentry% = 0 'int of array value for the phone book
 dim dialchoice$ 'string of selections in autodial phone book screen
 dim second$ 'for blinking cursor
 dim numtime%, cycles%, underscore% 'for blinking cursor
 dim blinkingcursor% = 0 'for turning blinking cursor on or off
 dim x%, y%
+dim transferdone% = 0 ' for ending transfers
 gui cursor load "cursor.spr" 'cursor sprite for blinking cursor function
 
 'main function
@@ -97,11 +98,15 @@ introscreen 'show the title screen when launched
 pause 2500
 cls
 loadphonebook 'load phone book, if exists
-loadconfig
 welcomebanner 'banner at top of terminal screen showing help and exit commands
+if mm.info(FILESIZE "settings.cfg") = -1 then
 setcomport 'set the COM port you want to use 1 or 2
 setcomspeed 'choose the speed of the COM port
+setcomtype
 pickcolor 'pick the color you want out of White, Amber, and Green
+else
+loadconfig
+end if
 setupcolor 'configure the color
 startcomport 'open the COM port for communications
 terminalonline 'just tells you that you're online and ready to communicate
@@ -111,6 +116,9 @@ modeminit 'send modem setup string
 pause 500 'wait for modem to process
 modeminfo 'ask modem to print its info for the user
 linefeeds% = 0
+terminal
+
+sub terminal
 do 'user input routine
 x% = mm.info(hpos)
 y% = mm.info(vpos)
@@ -226,7 +234,8 @@ end if
 if blinkingcursor% = 1 then blinkcursor
 end if
 loop
-end
+end sub
+
 
 sub loadconfig
 open "settings.cfg" for input as #7
@@ -234,6 +243,9 @@ line input #7, comporttype$
 line input #7, linefeedstate$
 line input #7, modeminitstring$
 line input #7, echosetting$
+line input #7, comportstr$
+line input #7, text_colorstr$
+line input #7, comspeed$
 close #7
   if comporttype$ = "RS-232 Serial" then
     rs232% = 1
@@ -250,7 +262,14 @@ close #7
   else
     echo% = 0
   end if
-
+  select case text_colorstr$
+    case "White"
+    text_color = 1
+    case "Amber"
+    text_color = 2
+    case "Green"
+    text_color = 3
+  end select
 end sub
 
 sub saveconfig
@@ -259,6 +278,9 @@ print #7, comporttype$
 print #7, linefeedstate$
 print #7, modeminitstring$
 print #7, echosetting$
+print #7, comportstr$
+print #7, text_colorstr$
+print #7, comspeed$
 close #7
 end sub
 
@@ -333,7 +355,7 @@ sub introscreen
   print @((ox+2)*fwidth%,(oy+4)*fheight%) "        for  the";
   print @((ox+2)*fwidth%,(oy+5)*fheight%) "    Color Maximite 2";
   print @((ox+2)*fwidth%,(oy+6)*fheight%) "";
-  print @((ox+2)*fwidth%,(oy+7)*fheight%) "       Version 1.9.3";
+  print @((ox+2)*fwidth%,(oy+7)*fheight%) "       Version 1.9.4";
   print @((ox+2)*fwidth%,(oy+8)*fheight%) "           by";
   print @((ox+2)*fwidth%,(oy+9)*fheight%) "       Jay Crutti";
   print @((ox+2)*fwidth%,(oy+10)*fheight%)"          2021";
@@ -354,13 +376,13 @@ print ""
 input "Which color do you want 1.White [DEFAULT], 2.Amber, or 3.Green "; textchoice$
 select case textchoice$
   case "","1" ' hitting enter or 1
-    text_color = 1 : setupcolor
+    text_color = 1 : text_colorstr$ = "White" : setupcolor
     print "White Selected."
   case "2"
-    text_color = 2 : setupcolor
+    text_color = 2 : text_colorstr$ = "Amber" : setupcolor
     print "Amber Selected."
   case "3"
-    text_color = 3 : setupcolor
+    text_color = 3 : text_colorstr$ = "Green" : setupcolor
     print "Green Selected."
   case else
     print "Invalid Selection, please try again."
@@ -419,11 +441,11 @@ print ""
 input "Choose COM Port, COM 1 [DEFAULT], 2, or 3 "; comchoice$
 select case comchoice$
   case "", "1" 'hitting enter or 1
-    comportstr$ = "COM1" : comportnum% = 1 : print "COM1 Selected."
+    comportstr$ = "COM1" :  print "COM1 Selected."
   case "2" 
-    comportstr$ = "COM2" : comportnum% = 2 : print "COM2 Selected."
+    comportstr$ = "COM2" : print "COM2 Selected."
   case "3"
-    comportstr$ = "COM3" : comportnum% = 3 : print "COM3 (via USB Type B port) Selected."
+    comportstr$ = "COM3" : print "COM3 (via USB Type B port) Selected."
         if mm.errno <> 0 then 
         Print "Error: ";mm.errmsg$,
       end if
@@ -439,7 +461,7 @@ end sub
 
 sub setcomtype
 local comtype$
-cls
+print ""
 print ""
 print "Select COM Port Type"
 print "1) TTL Serial [DEFAULT]"
@@ -451,7 +473,7 @@ select case comtype$
     comporttype$ = "TTL Serial" 'this string is important for the settings.cfg file!
     print "TTL Serial Selected."
   case "2"
-    rs232% = 1 ' 1 is INVerted RS232 levels
+    rs232% = 1 ' 1 is Inverted RS232 levels
     comporttype$ = "RS-232 Serial"
     print "RS-232 Serial Selected."
   case else
@@ -466,6 +488,7 @@ end sub
 
 sub setcomspeed
 onlineflag% = 0 'disable so incoming data doesn't disturb our decision
+print ""
 print ""
 print "Select COM Port Speed"
 print "1) 1200 BPS" 'CMM2 doesn't support 300 baud.
@@ -777,7 +800,7 @@ sub credits
   box ox*fwidth%, oy*fheight%, 40*fwidth%, 15*fheight%, 1,,rgb(black)
   print @((ox+2)*fwidth%,(oy+1)*fheight%) "Maxiterm for the Color Maximite 2";
   print @((ox+2)*fwidth%,(oy+2)*fheight%) "---------------------------------";
-  print @((ox+2)*fwidth%,(oy+3)*fheight%) "Version 1.9.3";
+  print @((ox+2)*fwidth%,(oy+3)*fheight%) "Version 1.9.4";
   print @((ox+2)*fwidth%,(oy+4)*fheight%) "John 'Jay' Crutti Jr. and friends. ";
   print @((ox+2)*fwidth%,(oy+5)*fheight%) "Copyright 2021, MIT LICENSE";
   print @((ox+2)*fwidth%,(oy+6)*fheight%) "";
@@ -1272,64 +1295,10 @@ End DefineFont
 '*****************************************************************
 
 '//////////////////////////////////////////////////////////////////////////////
-'
-' /////////////////////
-' // xmodem_cmm2.bas // (C) 2021 David R. Van Wagner, John A. Crutti Jr MIT LICENSE
-' /////////////////////
-'
 ' XMODEM receive for Color MaxiMite 2
-'
+' (C) 2021 David R. Van Wagner, John A. Crutti Jr
+' MIT LICENSE
 '//////////////////////////////////////////////////////////////////////////////
-'
-' OPEN SOURCE - MIT License Paraphrased (See MIT License for full details)
-'
-' 1. Always give credit where credit is due, with conditions:
-' 2. Do whatever else you want with the source code or binaries, as is or revise
-' 3. No liability assumed for any potential problems
-'
-'//////////////////////////////////////////////////////////////////////////////
-'
-' MIT License
-'
-' XMODEM receive for Color MaxiMite 2
-' Copyright (c) 2020-2021 by David R. Van Wagner, John A. Crutti Jr
-' https://github.com/davervw/cmm2_xmodem
-'
-' Permission is hereby granted, free of charge, to any person obtaining a copy
-' of this software and associated documentation files (the "Software"), to deal
-' in the Software without restriction, including without limitation the rights
-' to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-' copies of the Software, and to permit persons to whom the Software is
-' furnished to do so, subject to the following conditions:
-'
-' The above copyright notice and this permission notice shall be included in all
-' copies or substantial portions of the Software.
-'
-' THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-' IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-' FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-' AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-' LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-' OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-' SOFTWARE.
-'
-'//////////////////////////////////////////////////////////////////////////////
-
-'
-' TODO:
-'
-' ESP8266 WI-FI MODEM SUPPORT
-' TELNET SEND SUPPORT (binary file currently fails to send, telnet escape character?)
-' XMODEM-1K
-' XMODEM CRC
-' XFER FILENAME
-' GITHUB PRIVATE ORGANIZATION
-' FIX STATE 4 - NEED TO EAT BAD BLOCK BEFORE ERROR AGAIN
-' XMODEM UNIT TESTS (SUCCESS/FAILURE CASES)
-' INTEGRATE INTO MAXITERM
-
-'option crlf lf ' ENTER key is LF
-'option explicit ' require variable types to be explicitly stated or declared
 
 sub _xmodem_dim
   dim nak$:nak$=chr$(21) '^U
@@ -1343,7 +1312,7 @@ sub _xmodem_dim
   dim bs$:bs$=chr$(8)    '^H
   dim bel$:bel$=chr$(7)  '^G
   dim stx$:stx$=chr$(2)  '^B and STX is used to indicate a 1K packet
-  'C used by receiver to indicate preference for CRC
+  'dim crc$:crc$='C'
 
   dim xmodem_sum%
   dim xmodem_block%:xmodem_block%=1
@@ -1369,18 +1338,11 @@ end sub '_xmodem_dim_const
 '10 second timeout to get SOH, max 10 errors, about 90 seconds timeout at start
   'block receive timeout is 7 seconds
 
-sub _dumb_terminal
+sub _xmodem_terminal
   option crlf lf
 if len(xmodem_down$)>0 then
-  print ""
-  print "XMODEM download ready."
-  print "----------------------"
-  print "Type Control-U to begin receive."
-  print "Type Control-X to cancel transfer."
-end if
-if len(xmodem_up$)>0 then
-  print ""
-  print "XMODEM upload ready."
+  print "^U to receive"
+  print "^X to cancel transmission"
 end if
 
   xmodem_last_recv = timer
@@ -1391,18 +1353,16 @@ end if
     if len(key$) > 0 then
       print #5;key$;
       _xmodem_timer_handler key$
-    else
-    '_cursor_maintain
     end if
     _xmodem_timer_handler ""
   loop while xmodem_up$<>"" AND xmodem_down$<>""
 
   option crlf crlf
-end sub '_dumb_terminal
+end sub '_xmodem_terminal
 
 sub _xmodem_send xmodem_filename$
   xmodem_up$ = xmodem_filename$
-  _dumb_terminal
+  _xmodem_terminal
 end sub
 
 sub _xmodem_recv xmodem_filename$
@@ -1420,7 +1380,6 @@ sub _xmodem_timer_handler key$
     if xmodem_block% > 1 then
       if xmodem_state%=0 or xmodem_state%=4 then ' didn't receive block
         'print "TIMEOUT"
-        '_cursor_maintain_reset
         xmodem_errors%=xmodem_errors%+1
       else
         if xmodem_state%=5 then
@@ -1432,8 +1391,7 @@ sub _xmodem_timer_handler key$
         end if
       end if
       if xmodem_errors% >= 10 and xmodem_block%<>0 then
-        print "" : print "TRANSFER FAILED"
-        '_cursor_maintain_reset
+        'print "FAILED"
         close #1
         xmodem_block%=1
         xmodem_down$=""
@@ -1477,7 +1435,7 @@ sub _xmodem_handler serial$
             open xmodem_down$ for output as #1
          end if
          xmodem_state%=1
-         if debug% then print "<SOH>";':_cursor_maintain_reset
+         if debug% then print "<SOH>";
       else if xmodem_block%=1 and serial$=nak$ and len(xmodem_up$)<>0 then
          open xmodem_up$ for input as #2
          xmodem_buffer$=input$(128,#2)
@@ -1486,16 +1444,17 @@ sub _xmodem_handler serial$
       else
          if xmodem_block%>1 and serial$=eot$ then
             if debug% then print "<EOT> Success!"
-            '_cursor_maintain_reset
-            _xmodem_status_text " XMODEM Receiving Success"
+            _xmodem_status_clear
+            print "[ XMODEM Receiving Success ]"
             close #1
             print #5,ack$; ' Signal Received End of Transmission
             xmodem_block%=1
             xmodem_down$=""
+            ' note does not change state yet, waits for ACK
+            ' Jay: need to test scenario send EOT recv NAK, send EOT again recv ACK to really be done.
          else
             if serial$=cr$ or serial$=lf$ or serial$=bs$ or serial$=bel$ then
               if serial$ <> bel$ then
-                '_cursor_maintain_hide
                 if debug% then
                   print "<x";hex$(asc(serial$),2);">";
                   if serial$=cr$ then serial$=cr$+lf$
@@ -1505,10 +1464,8 @@ sub _xmodem_handler serial$
             else
               if asc(serial$)<32 or asc(serial$)>126 then
                 print "<x";hex$(asc(serial$),2);">";
-                '_cursor_maintain_reset
               else
                 print serial$;
-                '_cursor_maintain_reset
               end if
             end if
          end if
@@ -1516,21 +1473,17 @@ sub _xmodem_handler serial$
     case 1: 'soh received, waiting for blk#
       if serial$<>chr$(xmodem_block% and 255) then
          print "<??";asc(serial$);"??>";
-         '_cursor_maintain_reset
          xmodem_state%=4
       else
          if debug% then print "<BLK";xmodem_block% and 255;">";
-         '_cursor_maintain_reset
          xmodem_state%=2
       end if
     case 2: ' blk# received, waiting for inverse blk#
       if serial$<>chr$((xmodem_block% and 255) xor 255) then
          print "<??";asc(serial$);"??>";
-         '_cursor_maintain_reset
          xmodem_state%=4
       else
          if debug% then print "<~BLK";asc(serial$);">";
-         '_cursor_maintain_reset
          xmodem_state%=3:xmodem_buffer$="":xmodem_sum%=0
       end if
     case 3: ' receiving block, waiting for complete block including checksum
@@ -1540,30 +1493,26 @@ sub _xmodem_handler serial$
          'print "<";len(xmodem_buffer$);":";asc(serial$)">";
          if len(xmodem_buffer$) = 128 then
             if debug% then print "<128 BYTES>";
-            '_cursor_maintain_reset
          end if
       else
          if xmodem_sum% = asc(serial$) then
             if debug% then print "<SUM";xmodem_sum%;">"
-            '_cursor_maintain_reset
             xmodem_block% = xmodem_block% + 1
             print #1,xmodem_buffer$;
             print #5,ack$; ' signal received block
             xmodem_state%=0
          else
             print "<SUM";asc(serial$);"!=";xmodem_sum%;">"
-            '_cursor_maintain_reset
             print #5,nak$; ' Signal Problem in Communication
             xmodem_state%=1
          end if
       end if
     case 4: ' receiving error block, waiting for timeout
-      if debug% then print "TIMEOUT" ': _cursor_maintain_reset
+      if debug% then print "TIMEOUT"
       xmodem_errors%=xmodem_errors%+1
       xmodem_buffer$=""
       if xmodem_errors% == 10 then
          print "FAILED"
-         '_cursor_maintain_reset
          xmodem_state%=0
          close #1
          xmodem_block%=1
@@ -1572,12 +1521,10 @@ sub _xmodem_handler serial$
     case 5: 'sending, waiting for ACK
       if serial$=ack$ then
          if debug% then print "<ACK>"
-         '_cursor_maintain_reset
          if len(xmodem_buffer$) > 0 then
            xmodem_buffer$ = input$(128, #2) ' get next block
            if len(xmodem_buffer$) = 0 then
              if debug% then print "Wrapping up";
-             '_cursor_maintain_reset
              print #5,eot$;
            else
              xmodem_block%=xmodem_block%+1
@@ -1585,8 +1532,8 @@ sub _xmodem_handler serial$
            end if
          else
            if debug% then print "Success!!!"
-           _xmodem_status_text " XMODEM Sending Success"
-           '_cursor_maintain_reset
+           _xmodem_status_clear
+           print "[ XMODEM Sending Success ]"
            xmodem_state%=0
            xmodem_block%=1
            close #2
@@ -1595,11 +1542,9 @@ sub _xmodem_handler serial$
       else
          if serial$=nak$ then
            if debug% then print "<NAK>"
-           '_cursor_maintain_reset
            _xmodem_send_buffer
          else if serial$=can$ then
            if debug% then print "<CAN>"
-           '_cursor_maintain_reset
            xmodem_state%=0
            xmodem_block%=1
            close #2
@@ -1613,7 +1558,6 @@ end sub
 sub _xmodem_send_buffer
   local i
   if debug% then print "<BLOCK";xmodem_block% and 255;">";
-  '_cursor_maintain_reset
   if len(xmodem_buffer$)<128 then
     do
       xmodem_buffer$=xmodem_buffer$+eof$
@@ -1637,7 +1581,7 @@ sub _xmodem_status_progress
   else
     status$=status$+" Receiving"
   end if
-  status$=status$+" #"+STR$(xmodem_block%)+" "+STR$(xmodem_errors%)+" errors "
+  status$=status$+" #"+STR$(xmodem_block%)+" "+STR$(xmodem_errors%)+" errs "
 
   _xmodem_status_text status$
 end sub '_xmodem_status_progress
@@ -1663,15 +1607,6 @@ sub _xmodem_status_text status$
 end sub '_xmodem_status_text
 
 sub _xmodem_status_clear
-  'local status$, cols, add, i
-  'cols = mm.hres/mm.info(fontwidth)
-  'add = cols-1
-  'status$ = ""
-  'for i = 1 to add : status$=status$+" " : next i
-  '_xmodem_status_text status$
   box 0, mm.vres-mm.info(fontheight), mm.hres, mm.info(fontheight), 0, , rgb(black)
 end sub '_xmodem_status_clear
 
-'//////////////////////////////////////////////////////////////////////////////
-' END - XMODEM receive for Color MaxiMite 2
-'//////////////////////////////////////////////////////////////////////////////
