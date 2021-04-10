@@ -19,7 +19,8 @@ _xmodem_dim
 '_dumb_terminal
 'end
 
-ON ERROR IGNORE
+'ON ERROR IGNORE
+ON ERROR ABORT
 OPTION CRLF CRLF
 OPTION CONSOLE SCREEN
 '===================
@@ -90,7 +91,10 @@ dim numtime%, cycles%, underscore% 'for blinking cursor
 dim blinkingcursor% = 0 'for turning blinking cursor on or off
 dim x%, y%
 dim transferdone% = 0 ' for ending transfers
+dim xoffset%, yoffset%
 gui cursor load "cursor.spr" 'cursor sprite for blinking cursor function
+gui cursor on 2,x%,y%
+gui cursor hide
 
 'main function
 cls
@@ -111,9 +115,7 @@ setupcolor 'configure the color
 startcomport 'open the COM port for communications
 terminalonline 'just tells you that you're online and ready to communicate
 modemreset 'send modem reset "ATZ" string
-pause 500 ' wait for modem to process
 modeminit 'send modem setup string
-pause 500 'wait for modem to process
 modeminfo 'ask modem to print its info for the user
 linefeeds% = 0
 terminal
@@ -124,6 +126,10 @@ do 'user input routine
 x% = mm.info(hpos)
 y% = mm.info(vpos)
 if blinkingcursor% = 1 then 
+  if x% >= 800 then
+    x% = x% - 1
+  end if
+  gui cursor on 2 
   gui cursor x%,y%
 end if
 CHAR_OUT$ = INKEY$
@@ -134,15 +140,15 @@ if CHAR_OUT$ <> "" then
   if CHAR_OUT$ = chr$(136) then 
     CHAR_OUT$ = "" : upload
   end if
-feature$ = getchar$()'typing processed by getchar routine to watch for modifier keys 
-  if altflag% = 1 then 'check for ALT being asserted
-  select case feature$ 'turn all characters to lowercase
+  feature$ = getchar$()'typing processed by getchar routine to watch for modifier keys 
+    if altflag% = 1 then 'check for ALT being asserted
+      select case feature$ 'turn all characters to lowercase
       case "a" 'show the autodial phone book screen
         gui cursor off : phonebook
       case "b" 'set the COM port parameters again
         gui cursor off 'hide blinking cursor if on
-        onlineflag% = 0 'take us "offline" so we don't see incoming data during this.
-        cls : close #5 'close the COM port if it's already open.
+        'onlineflag% = 0 'take us "offline" so we don't see incoming data during this.
+        cls 
         setcomport : setcomspeed : terminalonline : startcomport
       case "c" 'clear the existing screen contents
         text 400,300, "  CLEARING SCREEN  ", "CM",1,1, RGB(BLACK), RGB(WHITE)
@@ -171,7 +177,7 @@ feature$ = getchar$()'typing processed by getchar routine to watch for modifier 
       case "x" 'hangup the modem/close the connection
         echo% = 0 : hangup
       case "q" 'exit the terminal
-        termexit
+        termexit 
       case "s" 'enable annoying beep sound for every key press
         if soundflag% = 0 then
           gui cursor off
@@ -237,6 +243,7 @@ end if
   if blinkingcursor% = 1 then 
     blinkcursor
   end if
+end if
 loop
 end sub
 
@@ -291,7 +298,8 @@ end sub
 
 
 sub loadphonebook
-open "bbslist.cfg" for input as #6
+  if mm.info(FILESIZE "bbslist.cfg") <> -1 then
+    open "bbslist.cfg" for input as #6
 line input #6, phonebookentry$(1):line input #6, phonebookusername$(1):line input #6, phonebookpassword$(1)
 line input #6, phonebookentry$(2):line input #6, phonebookusername$(2):line input #6, phonebookpassword$(2)
 line input #6, phonebookentry$(3):line input #6, phonebookusername$(3):line input #6, phonebookpassword$(3)
@@ -303,6 +311,7 @@ line input #6, phonebookentry$(8):line input #6, phonebookusername$(8):line inpu
 line input #6, phonebookentry$(9):line input #6, phonebookusername$(9):line input #6, phonebookpassword$(9)
 line input #6, phonebookentry$(10):line input #6, phonebookusername$(10):line input #6, phonebookpassword$(10)
 close #6
+end if
 end sub
 
   
@@ -469,11 +478,11 @@ print "2) RS-232 Serial"
 input "Make Selection: ", comtype$
 select case comtype$
   case "", "1" 'hitting enter or 1
-    rs232% = 0 ' 0 means TTL
+'    rs232% = 0 ' 0 means TTL
     comporttype$ = "TTL Serial" 'this string is important for the settings.cfg file!
     print "TTL Serial Selected."
   case "2"
-    rs232% = 1 ' 1 is Inverted RS232 levels
+'    rs232% = 1 ' 1 is Inverted RS232 levels
     comporttype$ = "RS-232 Serial"
     print "RS-232 Serial Selected."
   case else
@@ -522,6 +531,7 @@ input "Make Selection: ", comspeedchoice$
       setcomspeed
   end select
 onlineflag% = 1 'enable so we're back online
+startcomport
 end sub
 
 
@@ -545,22 +555,28 @@ end sub
 
 
 sub startcomport
+ON ERROR SKIP
 close #5
-  if rs232% = 1 then
+ON ERROR ABORT
+  if comporttype$ = "RS-232 Serial" then
     open comportstr$+":"+comspeed$+","+"8192"+",get_serial_input"+",INV" as #5
+'print "RS-232 Serial Port started, "; comspeed$+comportstr$
   else
     open comportstr$+":"+comspeed$+","+"8192"+",get_serial_input" as #5
+'print "TTL Serial Port started, "; comspeed$+comportstr$
   end if
 end sub
 
 
 sub modemreset
 print #5; modemresetstring$
+pause 500 ' wait for modem to process
 end sub
 
 
 sub modeminit
 print #5; modeminitstring$
+pause 500 'wait for modem to process
 end sub
 
 
@@ -574,6 +590,7 @@ sub get_serial_input
     CHARS_IN$ = input$(1,#5) ' only one char at a time
     if CHARS_IN$ <> "" then 
       _xmodem_handler CHARS_IN$
+    end if
   else
     CHARS_IN$ = input$(LOC(#5),#5)
     if onlineflag% = 1 then
@@ -604,7 +621,7 @@ input "Enter Filename: "; receivefile$
       setupcolor
       pause 1500
       welcomebanner
-      exit sub
+      terminal
   else
     print "Please wait, downloading "; receivefile$
     print ""
@@ -630,7 +647,7 @@ FileDialog(NameOfFile$())   ' no options so allow any file to be selected
     print chr$(13); chr$(10); "*** Upload Cancelled ***"
     setupcolor
     pause 1500
-    exit sub
+    terminal
   else
     cls
     print "Please wait, uploading "; NameOfFile$(0)
@@ -639,7 +656,7 @@ FileDialog(NameOfFile$())   ' no options so allow any file to be selected
 '  if mm.errno <> 0 then Print "Upload Error: ";mm.errmsg$
 '      end if
 '    print "Exiting Upload."
-  end if
+'  end if
 end sub
 
 
@@ -647,6 +664,7 @@ sub listfiles
 cls
 FileDialog(NameOfFile$())   ' no options so allow any file to be selected
 welcomebanner
+terminal
 end sub
 
 
@@ -676,7 +694,7 @@ sub termexit
   setupcolor
   gui cursor off
 pause 750
-exit
+end
 end sub
 
 
@@ -720,7 +738,7 @@ local comwindow$
 select case comwindow$
   case "" ' they hit enter
     print @(0,420) "Returning to terminal."
-    pause 1200 : welcomebanner
+    pause 1200 : welcomebanner : terminal
   case "a", "A"
     print chr$(10),chr$(13)
     setcomport : pause 1200 : comsettings
@@ -784,6 +802,7 @@ sub dialoghelp
   print @((ox+2)*fwidth%,(oy+22)*fheight%)"ALT+WIN-V Show Version info";
   do while inkey$ = "" : loop
 welcomebanner
+terminal
 end sub
 
       
@@ -807,6 +826,7 @@ sub credits
   print @((ox+2)*fwidth%,(oy+13)*fheight%)"Support email: recstudio@gmail.com";
   do while inkey$ = "" : loop
 welcomebanner
+terminal
 end sub
 
 
@@ -861,26 +881,39 @@ local newphonepassword$
         print @(0,420)"Returning to terminal." 'print text below the box
         pause 1200
         welcomebanner
+        terminal
      case "c" 'clear an entry
         print @(0,420) ""
         input "Enter entry to clear: ", phoneentry%
-          if phoneentry% = 1 to 10 then
+          if phoneentry% < 1 then ' they hit enter or negative input
+                print "Clearing aborted."
+                pause 1500
+                phonebook
+          end if
+          if phoneentry% > 10 then 
+                print "Clearing aborted."
+                pause 1500
+                phonebook
+          end if
             print "Clearing entry"; phoneentry%
             phonebookentry$(phoneentry%) = ""
             phonebookusername$(phoneentry%) = ""
             phonebookpassword$(phoneentry%) = ""
             pause 1500
             phonebook
-          end if
-          if phoneentry% = 0 then ' they hit enter
-                print "Clearing aborted."
-                pause 1500
-                phonebook
-          end if
      case "e" 'edit an entry
         print @(0,420) ""
         input "Enter entry to edit: ", phoneentry%
-          if phoneentry% = 1 to 10 then
+          if phoneentry% < 1 then
+                print "Not updated."
+                pause 1500
+                phonebook
+          end if
+          if phoneentry% > 10 then
+                print "Not updated."
+                pause 1500
+                phonebook
+          end if
             print "Current hostname / phone number: ";phonebookentry$(phoneentry%)
             input "Enter new hostname / phone number: ", newphoneentry$
               if newphoneentry$ <> "" then
@@ -888,12 +921,7 @@ local newphonepassword$
                 phonebookentry$(phoneentry%) = newphoneentry$
                 pause 1500
                 phonebook
-              else
-                print "Not updated."
-                pause 1500
-                phonebook
               end if
-          end if
       case "d"
         print @(0,420) chr$(10),chr$(13)
         input "Entry # to dial: ", phoneentry%
@@ -902,23 +930,31 @@ local newphonepassword$
       case "l" 'edit the login for an entry
         print @(0,420) ""
         input "Enter entry to edit: ", phoneentry%
-          if phoneentry% = 1 to 10 then
+          if phoneentry% < 1 then
+                print "Not updated."
+                pause 1500
+                phonebook
+          end if
+          if phoneentry% > 10 then
+                print "Invalid entry."
+                pause 1500
+                phonebook
+          end if
             print "Current Username: ";phonebookusername$(phoneentry%)
             print "Current Password: ";phonebookpassword$(phoneentry%)
             input "Enter new Username: ", newphoneusername$
               if newphoneusername$ <> "" then
-                print "Changing Username";phonebookusername$(phoneentry%); " to "; newphoneusername$
+                print "Changing Username ";phonebookusername$(phoneentry%); " to "; newphoneusername$
                 phonebookusername$(phoneentry%) = newphoneusername$
                 pause 1500
               else
                 print "Not updated."
                 pause 1500
-                phonebook
               end if
             print chr$(10), chr$(13)
             input "Enter new Password: ", newphonepassword$
-              if newphonpassword$ <> "" then
-                print "Changing Password";phonebookpassword$(phoneentry%); " to "; newphonepassword$
+              if newphonepassword$ <> "" then
+                print "Changing Password ";phonebookpassword$(phoneentry%); " to "; newphonepassword$
                 phonebookpassword$(phoneentry%) = newphonepassword$
                 pause 1500
                 phonebook
@@ -946,25 +982,24 @@ end sub
 
 
 sub blinkcursor
-local fwidth%, fheight%, xoffset%, yoffset%
+local xoffset%, yoffset%
 fheight% = mm.info(fontheight)
 fwidth% = mm.info(fontwidth)
 xoffset% = x%+fwidth%
 yoffset% = y%+fheight%
 second$ = right$(time$, 1)
 numtime% = val(second$)
-  if chars_out$ = "" then
     if numtime% <> cycles% and underscore% = 1 then
-      gui cursor on 2,x%,y%
+      gui cursor x%,y%
+      gui cursor show
       let cycles% = numtime%
       underscore% = 0
     end if
-      if numtime% <> cycles% and underscore% = 0 then
-        gui cursor off
-        let cycles% = numtime%
-        underscore% = 1
-      end if
-  end if
+    if numtime% <> cycles% and underscore% = 0 then
+      gui cursor hide
+      let cycles% = numtime%
+      underscore% = 1
+    end if
 end sub
 
       
