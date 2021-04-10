@@ -99,14 +99,14 @@ pause 2500
 cls
 loadphonebook 'load phone book, if exists
 welcomebanner 'banner at top of terminal screen showing help and exit commands
-if mm.info(FILESIZE "settings.cfg") = -1 then
-setcomport 'set the COM port you want to use 1 or 2
-setcomspeed 'choose the speed of the COM port
-setcomtype
-pickcolor 'pick the color you want out of White, Amber, and Green
-else
-loadconfig
-end if
+  if mm.info(FILESIZE "settings.cfg") = -1 then
+    setcomport 'set the COM port you want to use 1 or 2
+    setcomspeed 'choose the speed of the COM port
+    setcomtype
+    pickcolor 'pick the color you want out of White, Amber, and Green
+  else
+    loadconfig
+  end if
 setupcolor 'configure the color
 startcomport 'open the COM port for communications
 terminalonline 'just tells you that you're online and ready to communicate
