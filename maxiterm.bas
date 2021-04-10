@@ -71,7 +71,7 @@ dim text_color = 1 'used in setting font color choice
 dim text_colorstr$ 'string for saving text color choice
 dim feature$ 'output of getchar function to select program features
 dim modemresetstring$ = "ATZ" 'command to reset the modem
-dim modeminitstring$ = "ATE1V1X0Q0s40=512s0=1s41=1f0" 'command used to configure the modem
+dim modeminitstring$ = "ATE1V1X0Q0" 'command used to configure the modem
 dim modeminfostring$ = "ATI" 'command to ask modem to show information
 setpin 32,DOUT 'setup RTS/CTS pins
 setpin 33,DIN 'setup RTS/CTS pins
