@@ -118,6 +118,7 @@ modeminfo 'ask modem to print its info for the user
 linefeeds% = 0
 terminal
 
+
 sub terminal
 do 'user input routine
 x% = mm.info(hpos)
@@ -275,6 +276,7 @@ close #7
   end select
 end sub
 
+  
 sub saveconfig
 open "settings.cfg" for output as #7
 print #7, comporttype$
@@ -286,7 +288,6 @@ print #7, text_colorstr$
 print #7, comspeed$
 close #7
 end sub
-
 
 
 sub loadphonebook
@@ -304,6 +305,7 @@ line input #6, phonebookentry$(10):line input #6, phonebookusername$(10):line in
 close #6
 end sub
 
+  
 sub savephonebook
 open "bbslist.cfg" for output as #6
 print #6, phonebookentry$(1):print #6, phonebookusername$(1):print #6, phonebookpassword$(1)
@@ -393,8 +395,6 @@ end select
 end sub
 
 
-
-
 sub changelinefeeds
 local lfchoice$
 print ""
@@ -437,7 +437,6 @@ pause 1200
 end sub
 
 
-
 sub setcomport
 print ""
 input "Choose COM Port, COM 1 [DEFAULT], 2, or 3 "; comchoice$
@@ -458,7 +457,6 @@ select case comchoice$
 end select
 startcomport
 end sub
-
 
 
 sub setcomtype
@@ -485,7 +483,6 @@ select case comtype$
 end select
 startcomport
 end sub
-
 
 
 sub setcomspeed
@@ -789,6 +786,7 @@ sub dialoghelp
 welcomebanner
 end sub
 
+      
 sub credits
   const ox = 30
   const oy = 15
@@ -816,7 +814,6 @@ sub phonebook
 local newphoneentry$
 local newphoneusername$
 local newphonepassword$
-
   const ox = 3
   const oy = 3
   cls
