@@ -122,15 +122,17 @@ sub terminal
 do 'user input routine
 x% = mm.info(hpos)
 y% = mm.info(vpos)
-if blinkingcursor% = 1 then gui cursor x%,y%
+if blinkingcursor% = 1 then 
+  gui cursor x%,y%
 end if
 CHAR_OUT$ = INKEY$
 if CHAR_OUT$ <> "" then
-  if CHAR_OUT$ = chr$(137) then download
-    end if
+  if CHAR_OUT$ = chr$(137) then 
+    download
+  end if
   if CHAR_OUT$ = chr$(136) then 
     CHAR_OUT$ = "" : upload
-    end if
+  end if
 feature$ = getchar$()'typing processed by getchar routine to watch for modifier keys 
   if altflag% = 1 then 'check for ALT being asserted
   select case feature$ 'turn all characters to lowercase
@@ -149,11 +151,11 @@ feature$ = getchar$()'typing processed by getchar routine to watch for modifier 
           if debug% = 0 then
             colour rgb(black), rgb(red)
             print "*** Debug Mode On *** (NOT IMPLEMENTED)"
-          setupcolor : debug% = 1
+            setupcolor : debug% = 1
           else
             colour rgb(black), rgb(red)
             print "*** Debug Mode Off *** (NOT IMPLEMENTED)"
-          setupcolor : debug% = 0
+            setupcolor : debug% = 0
           end if
         else        
           gui cursor off : listfiles       
@@ -231,8 +233,9 @@ end if
         print ""
       end if
   end if
-if blinkingcursor% = 1 then blinkcursor
-end if
+  if blinkingcursor% = 1 then 
+    blinkcursor
+  end if
 loop
 end sub
 
@@ -336,11 +339,11 @@ if keydown(7) > 0 and keyflag% <> lastmodifier% then
     end select
 end if
 if keydown(7) = 0 then
-altflag% = 0 : winflag% = 0 : ctrlflag% = 0 : shiftflag% = 0
+  altflag% = 0 : winflag% = 0 : ctrlflag% = 0 : shiftflag% = 0
 end if
 lastmodifier% = keyflag% : keyvalue% = keydown(1)
   if keydown(0) > 0 and keylast% <> keyvalue% then
-      getchar$ = chr$(keyvalue%) : getchar$ = lcase$(getchar$)
+    getchar$ = chr$(keyvalue%) : getchar$ = lcase$(getchar$)
   end if
 keylast% = keyvalue% : pause 5
 end function
@@ -367,7 +370,6 @@ end sub
 sub welcomebanner
 cls : print "Terminal running. ALT-Q to Exit. ALT-H for Help."
 end sub
-
 
 
 sub pickcolor
@@ -526,7 +528,6 @@ onlineflag% = 1 'enable so we're back online
 end sub
 
 
-
 sub setupcolor
 select case TEXT_COLOR
   case 1
@@ -546,16 +547,14 @@ colour rgb(TERM_COLOR1,TERM_COLOR2,TERM_COLOR3), rgb(black)
 end sub
 
 
-
 sub startcomport
 close #5
-    if rs232% = 1 then
-      open comportstr$+":"+comspeed$+","+"8192"+",get_serial_input"+",INV" as #5
-    else
-      open comportstr$+":"+comspeed$+","+"8192"+",get_serial_input" as #5
-    end if
+  if rs232% = 1 then
+    open comportstr$+":"+comspeed$+","+"8192"+",get_serial_input"+",INV" as #5
+  else
+    open comportstr$+":"+comspeed$+","+"8192"+",get_serial_input" as #5
+  end if
 end sub
-
 
 
 sub modemreset
@@ -576,17 +575,18 @@ end sub
 sub get_serial_input
   if xmodem_up$<>"" or xmodem_down$<>"" then
     CHARS_IN$ = input$(1,#5) ' only one char at a time
-    if CHARS_IN$ <> "" then _xmodem_handler CHARS_IN$
+    if CHARS_IN$ <> "" then 
+      _xmodem_handler CHARS_IN$
   else
     CHARS_IN$ = input$(LOC(#5),#5)
     if onlineflag% = 1 then
       print CHARS_IN$;
-        if soundflag% = 1 AND CHARS_IN$ = chr$(13) then PLAY mp3 "sound.mp3"
+        if soundflag% = 1 AND CHARS_IN$ = chr$(13) then 
+          PLAY mp3 "sound.mp3"
         end if
     end if
   end if
 end sub
-
 
 
 sub terminalonline
@@ -596,25 +596,22 @@ sub terminalonline
 end sub
 
 
-
 sub download
 cls
-  print "Xmodem Download"
-  input "Enter Filename: "; receivefile$
-   if receivefile$ = "" then
-    colour rgb(black), rgb(red)
-    print chr$(13); chr$(10); "*** Download Cancelled ***"
-    setupcolor
-    pause 1500
-    welcomebanner
-    exit sub
-else
-  onlineflag% = 0
-  print "Please wait, downloading "; receivefile$
-  print ""
-  _xmodem_recv receivefile$
-'  if mm.errno <> 0 then
-'    Print "Download Error: ";mm.errmsg$,
+onlineflag% = 0
+print "Xmodem Download"
+input "Enter Filename: "; receivefile$
+    if receivefile$ = "" then
+      colour rgb(black), rgb(red)
+      print chr$(13); chr$(10); "*** Download Cancelled ***"
+      setupcolor
+      pause 1500
+      welcomebanner
+      exit sub
+  else
+    print "Please wait, downloading "; receivefile$
+    print ""
+    _xmodem_recv receivefile$
     onlineflag% = 1
   end if
   if mm.errno = 0 then
@@ -624,7 +621,6 @@ else
     onlineflag% = 1
   end if
 end sub
-
 
 
 sub upload
@@ -674,6 +670,7 @@ sub hangup
 onlineflag% = 1
 end sub
 
+      
 sub termexit
   colour rgb(red), rgb(black)
   close #5
@@ -692,7 +689,7 @@ local newinitstring$
             print "Current modem initialization string: ";modeminitstring$
             input "Enter new modem initialization string: ", newinitstring$
               if newinitstring$ <> "" then
-                print "Changing modem initializatin string to "; newinitstring$
+                print "Changing modem initialization string to "; newinitstring$
                 modeminitstring$ = newinitstring$
                 pause 1500
               else
@@ -700,7 +697,6 @@ local newinitstring$
                 pause 1500
               end if
 end sub
-
 
 
 sub comsettings
@@ -952,33 +948,32 @@ local newphonepassword$
 end sub
 
 
-sub blinkcursor 'future feature
-  local fwidth%, fheight%, xoffset%, yoffset%
+sub blinkcursor
+local fwidth%, fheight%, xoffset%, yoffset%
 fheight% = mm.info(fontheight)
 fwidth% = mm.info(fontwidth)
 xoffset% = x%+fwidth%
 yoffset% = y%+fheight%
 second$ = right$(time$, 1)
 numtime% = val(second$)
-
-if chars_out$ = "" then
-  if numtime% <> cycles% and underscore% = 1 then
-    gui cursor on 2,x%,y%
-    let cycles% = numtime%
-    underscore% = 0
-  end if
-    if numtime% <> cycles% and underscore% = 0 then
-      gui cursor off
+  if chars_out$ = "" then
+    if numtime% <> cycles% and underscore% = 1 then
+      gui cursor on 2,x%,y%
       let cycles% = numtime%
-      underscore% = 1
+      underscore% = 0
     end if
-end if
+      if numtime% <> cycles% and underscore% = 0 then
+        gui cursor off
+        let cycles% = numtime%
+        underscore% = 1
+      end if
+  end if
 end sub
 
+      
 sub disableblink
 gui cursor off
 end sub
-
 
 
 '*****************************************************************
