@@ -1009,7 +1009,7 @@ local newphonepassword$
       case "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"
         phoneentry% = val(dialchoice$)
         print @(0,420) "Dialing entry ";dialchoice$;", " phonebookentry$(phoneentry%)
-        print #5; "atdt"; phonebookentry$(phoneentry%)"", chr$(13)
+        print #5; "atd "; phonebookentry$(phoneentry%)"", chr$(13)
       case "s" 'save updated phone book to config file
         print @(0,420) "Phonebook Saved."
         savephonebook
@@ -1418,7 +1418,7 @@ end sub
 
 sub _xmodem_recv xmodem_filename$
   xmodem_down$ = xmodem_filename$
-  _dumb_terminal
+  _xmodem_terminal
 end sub
 
 ' handle timeouts for xmodem
@@ -1446,6 +1446,7 @@ sub _xmodem_timer_handler key$
         close #1
         xmodem_block%=1
         xmodem_down$=""
+      
       end if
     end if
   end if
@@ -1562,7 +1563,7 @@ sub _xmodem_handler serial$
       if debug% then print "TIMEOUT"
       xmodem_errors%=xmodem_errors%+1
       xmodem_buffer$=""
-      if xmodem_errors% == 10 then
+      if xmodem_errors% = 10 then
          print "FAILED"
          xmodem_state%=0
          close #1
