@@ -89,9 +89,8 @@ dim dialchoice$ 'string of selections in autodial phone book screen
 dim second$ 'for blinking cursor
 dim numtime%, cycles%, underscore% 'for blinking cursor
 dim blinkingcursor% = 0 'for turning blinking cursor on or off
-dim x%, y%
+dim x%, y%, xoffset%, yoffset%
 dim transferdone% = 0 ' for ending transfers
-dim xoffset%, yoffset%
 gui cursor load "cursor.spr" 'cursor sprite for blinking cursor function
 gui cursor on 2,x%,y%
 gui cursor hide
@@ -123,15 +122,12 @@ terminal
 
 sub terminal
 do 'user input routine
-x% = mm.info(hpos)
-y% = mm.info(vpos)
-if blinkingcursor% = 1 then 
+x% = MM.INFO(HPOS)
+y% = MM.INFO(VPOS)
   if x% >= 800 then
-    x% = x% - 1
+  x% = x% - 1
   end if
-  gui cursor on 2 
-  gui cursor x%,y%
-end if
+gui cursor x%,y%
 CHAR_OUT$ = INKEY$
 if CHAR_OUT$ <> "" then
   if CHAR_OUT$ = chr$(137) then 
@@ -144,12 +140,19 @@ if CHAR_OUT$ <> "" then
     if altflag% = 1 then 'check for ALT being asserted
       select case feature$ 'turn all characters to lowercase
       case "a" 'show the autodial phone book screen
-        gui cursor off : phonebook
+        gui cursor hide : phonebook
+          if blinkingcursor% = 1 then
+          gui cursor show
+          end if
       case "b" 'set the COM port parameters again
-        gui cursor off 'hide blinking cursor if on
-        'onlineflag% = 0 'take us "offline" so we don't see incoming data during this.
+        gui cursor hide 'hide blinking cursor if on
+        onlineflag% = 0 'take us "offline" so we don't see incoming data during this.
         cls 
         setcomport : setcomspeed : terminalonline : startcomport
+          if blinkingcursor% = 1 then
+          gui cursor show
+          end if
+        onlineflag% = 1 'back online
       case "c" 'clear the existing screen contents
         text 400,300, "  CLEARING SCREEN  ", "CM",1,1, RGB(BLACK), RGB(WHITE)
         pause 750 : welcomebanner      
@@ -157,67 +160,94 @@ if CHAR_OUT$ <> "" then
         if winflag% = 1 then
           if debug% = 0 then
             colour rgb(black), rgb(red)
-            print "*** Debug Mode On *** (NOT IMPLEMENTED)"
+            print "*** Debug Mode On ***"
             setupcolor : debug% = 1
           else
             colour rgb(black), rgb(red)
-            print "*** Debug Mode Off *** (NOT IMPLEMENTED)"
+            print "*** Debug Mode Off ***"
             setupcolor : debug% = 0
           end if
         else        
-          gui cursor off : listfiles       
+          gui cursor hide : listfiles       
+          if blinkingcursor% = 1 then
+          gui cursor show
+          end if
         end if
       case "f" 'change the font color again
-        gui cursor off : pickcolor : setupcolor
+        gui cursor hide : pickcolor : setupcolor
+          if blinkingcursor% = 1 then
+          gui cursor show
+          end if
       case "i" 're-initialize the modem
-        gui cursor off : colour rgb(black), rgb(red)
+        gui cursor hide : colour rgb(black), rgb(red)
         print "*** SENDING MODEM INITIALIZATION ***" : setupcolor : modeminit
+          if blinkingcursor% = 1 then
+          gui cursor show
+          end if
       case "l" ' change the line feed TX setting
-        gui cursor off : cls : changelinefeeds : welcomebanner
+        gui cursor hide : cls : changelinefeeds : welcomebanner
+          if blinkingcursor% = 1 then
+          gui cursor show
+          end if
       case "x" 'hangup the modem/close the connection
         echo% = 0 : hangup
       case "q" 'exit the terminal
         termexit 
       case "s" 'enable annoying beep sound for every key press
         if soundflag% = 0 then
-          gui cursor off
+          gui cursor hide
           welcomebanner : text 400,300, "*** Sound On ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
           setupcolor : print "" : pause 1000
           welcomebanner : soundflag% = 1
+          if blinkingcursor% = 1 then
+          gui cursor show
+          end if
         else
-          gui cursor off
+          gui cursor hide
           welcomebanner : text 400,300, "*** Sound Off ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
           setupcolor : print "" : pause 1000
           welcomebanner : soundflag% = 0
+          if blinkingcursor% = 1 then
+          gui cursor show
+          end if
         end if
       case "h" 'user help screen
-          gui cursor off : cls : dialogHelp
+          gui cursor hide : cls : dialogHelp
       case "e" 'turn on local echo in case modem isn't set to echo    
         if echo% = 1 then
-          gui cursor off
+          gui cursor hide
           welcomebanner : text 400,300, "*** Local Echo Off ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
           setupcolor : print "" : pause 1000
           echo% = 0 : echosetting$ = "Echo Off" : welcomebanner
+          if blinkingcursor% = 1 then
+          gui cursor show
+          end if
         else
-          gui cursor off
+          gui cursor hide
           text 400,300, "*** Local Echo On ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
           setupcolor : print "" : pause 1000
           echo% = 1 : echosetting$ = "Echo On" : welcomebanner
+          if blinkingcursor% = 1 then
+          gui cursor show
+          end if
         end if  
       case "p" 'show the current com port settings
-        gui cursor off : comsettings  
+        gui cursor hide : comsettings  
       case "v" 'show the credits screen
         if winflag% = 1 then 'credits screen takes ALT and WIN keys to show
           credits
         end if
       case "t" 'change the com port type, TTL or RS-232 levels 
-        gui cursor off : setcomtype : startcomport
+        gui cursor hide : setcomtype : startcomport
+          if blinkingcursor% = 1 then
+          gui cursor show
+          end if
       case "u" ' underline blinking cursor
         if blinkingcursor% = 1 then
           welcomebanner
           text 400,300, "*** Blinking Cursor Off ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
           setupcolor : print "" : pause 1000
-          blinkingcursor% = 0 : gui cursor off : welcomebanner
+          blinkingcursor% = 0 : welcomebanner
         else
         text 400,300, "*** Blinking Cursor On ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
           setupcolor : print "" : pause 1000
@@ -240,10 +270,22 @@ end if
         print ""
       end if
   end if
-  if blinkingcursor% = 1 then 
-    blinkcursor
-  end if
 end if
+end if
+  if blinkingcursor% = 1 then 
+    second$ = right$(time$, 1)
+    numtime% = val(second$)
+    if numtime% <> cycles% and underscore% = 1 then
+      gui cursor show
+      let cycles% = numtime%
+      underscore% = 0
+    end if
+    if numtime% <> cycles% and underscore% = 0 then
+      gui cursor hide
+      let cycles% = numtime%
+      underscore% = 1
+    end if
+  end if
 loop
 end sub
 
@@ -560,23 +602,21 @@ close #5
 ON ERROR ABORT
   if comporttype$ = "RS-232 Serial" then
     open comportstr$+":"+comspeed$+","+"8192"+",get_serial_input"+",INV" as #5
-'print "RS-232 Serial Port started, "; comspeed$+comportstr$
   else
     open comportstr$+":"+comspeed$+","+"8192"+",get_serial_input" as #5
-'print "TTL Serial Port started, "; comspeed$+comportstr$
   end if
 end sub
 
 
 sub modemreset
 print #5; modemresetstring$
-pause 500 ' wait for modem to process
+pause 250 ' wait for modem to process
 end sub
 
 
 sub modeminit
 print #5; modeminitstring$
-pause 500 'wait for modem to process
+pause 250 'wait for modem to process
 end sub
 
 
@@ -596,7 +636,9 @@ sub get_serial_input
     if onlineflag% = 1 then
       print CHARS_IN$;
         if soundflag% = 1 AND CHARS_IN$ = chr$(13) then 
+          ON ERROR IGNORE
           PLAY mp3 "sound.mp3"
+          On ERROR ABORT
         end if
     end if
   end if
@@ -682,7 +724,7 @@ sub hangup
   colour rgb(black), rgb(red)
     print "*** DISCONNECTED ***"
       setupcolor
-onlineflag% = 1
+onlineflag% = 1 'back online
 end sub
 
       
@@ -700,17 +742,17 @@ end sub
 
 sub changeinitstring
 local newinitstring$
-        print @(0,420) ""
-            print "Current modem initialization string: ";modeminitstring$
-            input "Enter new modem initialization string: ", newinitstring$
-              if newinitstring$ <> "" then
-                print "Changing modem initialization string to "; newinitstring$
-                modeminitstring$ = newinitstring$
-                pause 1500
-              else
-                print "Not updated."
-                pause 1500
-              end if
+  print @(0,420) ""
+  print "Current modem initialization string: ";modeminitstring$
+  input "Enter new modem initialization string: ", newinitstring$
+    if newinitstring$ <> "" then
+      print "Changing modem initialization string to "; newinitstring$
+      modeminitstring$ = newinitstring$
+      pause 1500
+    else
+      print "Not updated."
+      pause 1500
+    end if
 end sub
 
 
@@ -882,7 +924,7 @@ local newphonepassword$
         pause 1200
         welcomebanner
         terminal
-     case "c" 'clear an entry
+      case "c" 'clear an entry
         print @(0,420) ""
         input "Enter entry to clear: ", phoneentry%
           if phoneentry% < 1 then ' they hit enter or negative input
@@ -901,7 +943,7 @@ local newphonepassword$
             phonebookpassword$(phoneentry%) = ""
             pause 1500
             phonebook
-     case "e" 'edit an entry
+      case "e" 'edit an entry
         print @(0,420) ""
         input "Enter entry to edit: ", phoneentry%
           if phoneentry% < 1 then
@@ -981,29 +1023,11 @@ local newphonepassword$
 end sub
 
 
-sub blinkcursor
-local xoffset%, yoffset%
-fheight% = mm.info(fontheight)
-fwidth% = mm.info(fontwidth)
-xoffset% = x%+fwidth%
-yoffset% = y%+fheight%
-second$ = right$(time$, 1)
-numtime% = val(second$)
-    if numtime% <> cycles% and underscore% = 1 then
-      gui cursor x%,y%
-      gui cursor show
-      let cycles% = numtime%
-      underscore% = 0
-    end if
-    if numtime% <> cycles% and underscore% = 0 then
-      gui cursor hide
-      let cycles% = numtime%
-      underscore% = 1
-    end if
+sub blinkcursor 'currently in main loop
 end sub
 
       
-sub disableblink
+sub disableblink 'not used
 gui cursor off
 end sub
 
