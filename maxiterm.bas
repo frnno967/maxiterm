@@ -2,22 +2,9 @@
 'Also code from Flashback.bas 1.0.0 by Rich Martin (datawiz)
 'Also code from vegipete for the GetFile routine
 'Also code from davervw for Xmodem 07 Mar 2021
-'Version 1.9.4 John Crutti Jr 4-10-2021
+'Version 1.9.5 John Crutti Jr 4-10-2021
 
 OPTION EXPLICIT
-
-_xmodem_dim
-
-'commented code for bare bones with xmodem dumb terminal testing (COM3 only)
-'dim debug%:debug%=0
-'_cursor_dim
-'_cursor_enable
-'cursor_mode = 2 ' 1=double height underline, 2=reverse cell
-'open "com3:115200,8192,_serial_read" as #5 ' open serial
-'xmodem_up$="FILE.SND"
-'xmodem_down$="FILE.RCV"
-'_dumb_terminal
-'end
 
 'ON ERROR IGNORE
 ON ERROR ABORT
@@ -94,6 +81,7 @@ dim transferdone% = 0 ' for ending transfers
 gui cursor load "cursor.spr" 'cursor sprite for blinking cursor function
 gui cursor on 2,x%,y%
 gui cursor hide
+_xmodem_dim
 
 'main function
 cls
@@ -130,13 +118,13 @@ y% = MM.INFO(VPOS)
 gui cursor x%,y%
 CHAR_OUT$ = INKEY$
 if CHAR_OUT$ <> "" then
-  if CHAR_OUT$ = chr$(137) then 
+  if CHAR_OUT$ = chr$(137) then
     download
   end if
-  if CHAR_OUT$ = chr$(136) then 
+  if CHAR_OUT$ = chr$(136) then
     CHAR_OUT$ = "" : upload
   end if
-  feature$ = getchar$()'typing processed by getchar routine to watch for modifier keys 
+  feature$ = getchar$()'typing processed by getchar routine to watch for modifier keys
     if altflag% = 1 then 'check for ALT being asserted
       select case feature$ 'turn all characters to lowercase
       case "a" 'show the autodial phone book screen
@@ -147,7 +135,7 @@ if CHAR_OUT$ <> "" then
       case "b" 'set the COM port parameters again
         gui cursor hide 'hide blinking cursor if on
         onlineflag% = 0 'take us "offline" so we don't see incoming data during this.
-        cls 
+        cls
         setcomport : setcomspeed : terminalonline : startcomport
           if blinkingcursor% = 1 then
           gui cursor show
@@ -155,7 +143,7 @@ if CHAR_OUT$ <> "" then
         onlineflag% = 1 'back online
       case "c" 'clear the existing screen contents
         text 400,300, "  CLEARING SCREEN  ", "CM",1,1, RGB(BLACK), RGB(WHITE)
-        pause 750 : welcomebanner      
+        pause 750 : welcomebanner
       case "d" ' Not implemented yet.
         if winflag% = 1 then
           if debug% = 0 then
@@ -167,8 +155,8 @@ if CHAR_OUT$ <> "" then
             print "*** Debug Mode Off ***"
             setupcolor : debug% = 0
           end if
-        else        
-          gui cursor hide : listfiles       
+        else
+          gui cursor hide : listfiles
           if blinkingcursor% = 1 then
           gui cursor show
           end if
@@ -192,7 +180,7 @@ if CHAR_OUT$ <> "" then
       case "x" 'hangup the modem/close the connection
         echo% = 0 : hangup
       case "q" 'exit the terminal
-        termexit 
+        termexit
       case "s" 'enable annoying beep sound for every key press
         if soundflag% = 0 then
           gui cursor hide
@@ -213,7 +201,7 @@ if CHAR_OUT$ <> "" then
         end if
       case "h" 'user help screen
           gui cursor hide : cls : dialogHelp
-      case "e" 'turn on local echo in case modem isn't set to echo    
+      case "e" 'turn on local echo in case modem isn't set to echo
         if echo% = 1 then
           gui cursor hide
           welcomebanner : text 400,300, "*** Local Echo Off ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
@@ -230,14 +218,14 @@ if CHAR_OUT$ <> "" then
           if blinkingcursor% = 1 then
           gui cursor show
           end if
-        end if  
+        end if
       case "p" 'show the current com port settings
-        gui cursor hide : comsettings  
+        gui cursor hide : comsettings
       case "v" 'show the credits screen
         if winflag% = 1 then 'credits screen takes ALT and WIN keys to show
           credits
         end if
-      case "t" 'change the com port type, TTL or RS-232 levels 
+      case "t" 'change the com port type, TTL or RS-232 levels
         gui cursor hide : setcomtype : startcomport
           if blinkingcursor% = 1 then
           gui cursor show
@@ -256,9 +244,9 @@ if CHAR_OUT$ <> "" then
       case "r" 'run the initial modem setup routine again in case it gets wonky
         colour rgb(black), rgb(red)
         print "*** RESETTING MODEM ***" : setupcolor : modemreset : pause 250
-        modeminit : pause 250 : modeminfo  
+        modeminit : pause 250 : modeminfo
     end select
-  else  
+  else
 print #5, CHAR_OUT$;
       if linefeeds% = 1 and CHAR_OUT$ = chr$(13) then
         print #5, ""
@@ -272,7 +260,7 @@ end if
   end if
 end if
 end if
-  if blinkingcursor% = 1 then 
+  if blinkingcursor% = 1 then
     second$ = right$(time$, 1)
     numtime% = val(second$)
     if numtime% <> cycles% and underscore% = 1 then
@@ -325,7 +313,7 @@ close #7
   end select
 end sub
 
-  
+
 sub saveconfig
 open "settings.cfg" for output as #7
 print #7, comporttype$
@@ -356,7 +344,7 @@ close #6
 end if
 end sub
 
-  
+
 sub savephonebook
 open "bbslist.cfg" for output as #6
 print #6, phonebookentry$(1):print #6, phonebookusername$(1):print #6, phonebookpassword$(1)
@@ -411,7 +399,7 @@ sub introscreen
   print @((ox+2)*fwidth%,(oy+4)*fheight%) "        for  the";
   print @((ox+2)*fwidth%,(oy+5)*fheight%) "    Color Maximite 2";
   print @((ox+2)*fwidth%,(oy+6)*fheight%) "";
-  print @((ox+2)*fwidth%,(oy+7)*fheight%) "       Version 1.9.4";
+  print @((ox+2)*fwidth%,(oy+7)*fheight%) "       Version 1.9.5";
   print @((ox+2)*fwidth%,(oy+8)*fheight%) "           by";
   print @((ox+2)*fwidth%,(oy+9)*fheight%) "       Jay Crutti";
   print @((ox+2)*fwidth%,(oy+10)*fheight%)"          2021";
@@ -494,11 +482,11 @@ input "Choose COM Port, COM 1 [DEFAULT], 2, or 3 "; comchoice$
 select case comchoice$
   case "", "1" 'hitting enter or 1
     comportstr$ = "COM1" :  print "COM1 Selected."
-  case "2" 
+  case "2"
     comportstr$ = "COM2" : print "COM2 Selected."
   case "3"
     comportstr$ = "COM3" : print "COM3 (via USB Type B port) Selected."
-        if mm.errno <> 0 then 
+        if mm.errno <> 0 then
         Print "Error: ";mm.errmsg$,
       end if
   case else
@@ -628,14 +616,14 @@ end sub
 sub get_serial_input
   if xmodem_up$<>"" or xmodem_down$<>"" then
     CHARS_IN$ = input$(1,#5) ' only one char at a time
-    if CHARS_IN$ <> "" then 
+    if CHARS_IN$ <> "" then
       _xmodem_handler CHARS_IN$
     end if
   else
     CHARS_IN$ = input$(LOC(#5),#5)
     if onlineflag% = 1 then
       print CHARS_IN$;
-        if soundflag% = 1 AND CHARS_IN$ = chr$(13) then 
+        if soundflag% = 1 AND CHARS_IN$ = chr$(13) then
           ON ERROR IGNORE
           PLAY mp3 "sound.mp3"
           On ERROR ABORT
@@ -727,7 +715,7 @@ sub hangup
 onlineflag% = 1 'back online
 end sub
 
-      
+
 sub termexit
   colour rgb(red), rgb(black)
   close #5
@@ -847,7 +835,7 @@ welcomebanner
 terminal
 end sub
 
-      
+
 sub credits
   const ox = 30
   const oy = 15
@@ -855,7 +843,7 @@ sub credits
   box ox*fwidth%, oy*fheight%, 40*fwidth%, 15*fheight%, 1,,rgb(black)
   print @((ox+2)*fwidth%,(oy+1)*fheight%) "Maxiterm for the Color Maximite 2";
   print @((ox+2)*fwidth%,(oy+2)*fheight%) "---------------------------------";
-  print @((ox+2)*fwidth%,(oy+3)*fheight%) "Version 1.9.4";
+  print @((ox+2)*fwidth%,(oy+3)*fheight%) "Version 1.9.5";
   print @((ox+2)*fwidth%,(oy+4)*fheight%) "John 'Jay' Crutti Jr. and friends. ";
   print @((ox+2)*fwidth%,(oy+5)*fheight%) "Copyright 2021, MIT LICENSE";
   print @((ox+2)*fwidth%,(oy+6)*fheight%) "";
@@ -932,7 +920,7 @@ local newphonepassword$
                 pause 1500
                 phonebook
           end if
-          if phoneentry% > 10 then 
+          if phoneentry% > 10 then
                 print "Clearing aborted."
                 pause 1500
                 phonebook
@@ -1026,7 +1014,7 @@ end sub
 sub blinkcursor 'currently in main loop
 end sub
 
-      
+
 sub disableblink 'not used
 gui cursor off
 end sub
@@ -1391,13 +1379,13 @@ end sub '_xmodem_dim_const
 
 sub _xmodem_terminal
   option crlf lf
-if len(xmodem_down$)>0 then
-  print "^U to receive"
-  print "^X to cancel transmission"
-end if
+
+  if len(xmodem_down$)>0 then
+    print "^X to cancel transmission"
+    print #5,nak$; ' start download immediately
+  end if
 
   xmodem_last_recv = timer
-
   local key$
   do ' terminal - send pressed keys, send [nak] on timeout
     key$ = inkey$
@@ -1406,7 +1394,7 @@ end if
       _xmodem_timer_handler key$
     end if
     _xmodem_timer_handler ""
-  loop while xmodem_up$<>"" AND xmodem_down$<>""
+  loop while xmodem_up$<>"" OR xmodem_down$<>""
 
   option crlf crlf
 end sub '_xmodem_terminal
@@ -1446,7 +1434,7 @@ sub _xmodem_timer_handler key$
         close #1
         xmodem_block%=1
         xmodem_down$=""
-      
+
       end if
     end if
   end if
