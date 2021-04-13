@@ -2,7 +2,7 @@
 'Also code from Flashback.bas 1.0.0 by Rich Martin (datawiz)
 'Also code from vegipete for the GetFile routine
 'Also code from davervw for Xmodem 07 Mar 2021
-'Version 1.9.5 John Crutti Jr 4-10-2021
+'Version 1.9.5 John Crutti Jr 4-12-2021
 
 OPTION EXPLICIT
 ON ERROR ABORT
