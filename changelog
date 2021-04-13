@@ -1,6 +1,7 @@
 v1.9.5:
 -start download (request remote start) without additional user intervention required
 -xmodem processing loop/timer fix (was terminiating xmodem loop almost immediately)
+-tons of bug fixes and remember more user settings in settings.cfg. Now Font choice, Line Feeds, Local Echo, and Blinking cursor state is saved. 
 
 v1.9.4:
 -added recall/save of COM port settings to settings.cfg. Prompts only show at startup if settings.cfg is missing.
