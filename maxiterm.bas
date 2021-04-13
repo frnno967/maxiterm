@@ -30,8 +30,7 @@ dim comportstr$ = "COM1" ' COM port as a string for COM Port subroutine.
 dim comchoice$ = "1" ' used in COM selection subroutine.
 dim comspeedchoice$ = "9" ' used in COM Speed selection subroutine.
 dim comspeed$ = "115200" ' COM Speed as a string for COM Speed subroutine.
-dim rs232% = 0 'start with TTL type serial port
-dim comporttype$ = "TTL Serial" 'default to TTL signals for ESP modules
+dim comporttype$ = "TTL Serial" 'default to TTL, other option is RS-232 Serial
 dim CHAR_OUT$ 'characters we're typing at the console to be sent to modem
 dim altflag% 'is ALT key pressed?
 dim winflag% 'is WINDOWS key pressed?
@@ -42,10 +41,8 @@ dim keyflag% = 0 'has a key been pressed in getchar() routine
 dim keylast% = 0 'value of last ascii key typed in getchar() routine
 dim lastmodifier% = 0 'value of the last modifier keys used in getchar() routine
 dim CHARS_IN$ 'characters being received from the modem
-dim echo% = 0 'is local echo enabled?
-dim echosetting$ = "Echo Off"
-dim linefeeds% = 0 'setting of line feeds to be sent to modem after every CR
-dim linefeedstate$ = "LF Off"
+dim echosetting$ = "Echo Off" 'is local echo enabled. Other option is Echo On
+dim linefeedstate$ = "LF Off" 'setting of line feeds to be sent to modem after every CR
 dim width%
 dim height%
 dim onlineflag% = 1 'set to 1 if currently printing serial data to the screen
@@ -67,15 +64,15 @@ PIN(32) = 0 'setup RTS/CTS pins
 dim TERM_COLOR1 = 255 'init value for white
 dim TERM_COLOR2 = 255 'init value for white
 dim TERM_COLOR3 = 255 'init value for white
-dim debug% 'for future debug mode
+dim debug% 'for debug mode
 dim phonebookentry$(10) as string ' array holding the user's phone book
 dim phonebookusername$(10) as string 'array holding user's login name
 dim phonebookpassword$(10) as string 'array holding user's password
 dim phoneentry% = 0 'int of array value for the phone book
 dim dialchoice$ 'string of selections in autodial phone book screen
-dim second$ 'for blinking cursor
+dim second$ 'for blinking cursor routine
 dim numtime%, cycles%, underscore% 'for blinking cursor
-dim blinkingcursor% = 0 'for turning blinking cursor on or off
+dim blinkingcursor$ = "Blinking Off" 'for turning blinking cursor on or off
 dim x%, y%, xoffset%, yoffset%
 dim transferdone% = 0 ' for ending transfers
 gui cursor load "cursor.spr" 'cursor sprite for blinking cursor function
@@ -104,7 +101,6 @@ terminalonline 'just tells you that you're online and ready to communicate
 modemreset 'send modem reset "ATZ" string
 modeminit 'send modem setup string
 modeminfo 'ask modem to print its info for the user
-linefeeds% = 0
 terminal
 
 
@@ -129,7 +125,7 @@ if CHAR_OUT$ <> "" then
       select case feature$ 'turn all characters to lowercase
       case "a" 'show the autodial phone book screen
         gui cursor hide : phonebook
-          if blinkingcursor% = 1 then
+          if blinkingcursor$ = "Blinking On" then
           gui cursor show
           end if
       case "b" 'set the COM port parameters again
@@ -137,7 +133,7 @@ if CHAR_OUT$ <> "" then
         onlineflag% = 0 'take us "offline" so we don't see incoming data during this.
         cls
         setcomport : setcomspeed : terminalonline : startcomport
-          if blinkingcursor% = 1 then
+          if blinkingcursor$ = "Blinking On" then
           gui cursor show
           end if
         onlineflag% = 1 'back online
@@ -157,28 +153,28 @@ if CHAR_OUT$ <> "" then
           end if
         else
           gui cursor hide : listfiles
-          if blinkingcursor% = 1 then
+          if blinkingcursor$ = "Blinking On" then
           gui cursor show
           end if
         end if
       case "f" 'change the font color again
         gui cursor hide : pickcolor : setupcolor
-          if blinkingcursor% = 1 then
+          if blinkingcursor$ = "Blinking On" then
           gui cursor show
           end if
       case "i" 're-initialize the modem
         gui cursor hide : colour rgb(black), rgb(red)
         print "*** SENDING MODEM INITIALIZATION ***" : setupcolor : modeminit
-          if blinkingcursor% = 1 then
+          if blinkingcursor$ = "Blinking On" then
           gui cursor show
           end if
       case "l" ' change the line feed TX setting
         gui cursor hide : cls : changelinefeeds : welcomebanner
-          if blinkingcursor% = 1 then
+          if blinkingcursor$ = "Blinking On" then
           gui cursor show
           end if
       case "x" 'hangup the modem/close the connection
-        echo% = 0 : hangup
+        echosetting$ = "Echo Off" : hangup
       case "q" 'exit the terminal
         termexit
       case "s" 'enable annoying beep sound for every key press
@@ -187,7 +183,7 @@ if CHAR_OUT$ <> "" then
           welcomebanner : text 400,300, "*** Sound On ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
           setupcolor : print "" : pause 1000
           welcomebanner : soundflag% = 1
-          if blinkingcursor% = 1 then
+          if blinkingcursor$ = "Blinking On" then
           gui cursor show
           end if
         else
@@ -195,27 +191,27 @@ if CHAR_OUT$ <> "" then
           welcomebanner : text 400,300, "*** Sound Off ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
           setupcolor : print "" : pause 1000
           welcomebanner : soundflag% = 0
-          if blinkingcursor% = 1 then
+          if blinkingcursor$ = "Blinking On" then
           gui cursor show
           end if
         end if
       case "h" 'user help screen
           gui cursor hide : cls : dialogHelp
       case "e" 'turn on local echo in case modem isn't set to echo
-        if echo% = 1 then
+        if echosetting$ = "Echo On" then
           gui cursor hide
           welcomebanner : text 400,300, "*** Local Echo Off ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
           setupcolor : print "" : pause 1000
-          echo% = 0 : echosetting$ = "Echo Off" : welcomebanner
-          if blinkingcursor% = 1 then
+          echosetting$ = "Echo Off" : welcomebanner
+          if blinkingcursor$ = "Blinking On" then
           gui cursor show
           end if
         else
           gui cursor hide
           text 400,300, "*** Local Echo On ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
           setupcolor : print "" : pause 1000
-          echo% = 1 : echosetting$ = "Echo On" : welcomebanner
-          if blinkingcursor% = 1 then
+          echosetting$ = "Echo On" : welcomebanner
+          if blinkingcursor$ = "Blinking On" then
           gui cursor show
           end if
         end if
@@ -227,19 +223,19 @@ if CHAR_OUT$ <> "" then
         end if
       case "t" 'change the com port type, TTL or RS-232 levels
         gui cursor hide : setcomtype : startcomport
-          if blinkingcursor% = 1 then
+          if blinkingcursor$ = "Blinking On" then
           gui cursor show
           end if
       case "u" ' underline blinking cursor
-        if blinkingcursor% = 1 then
+        if blinkingcursor$ = "Blinking On" then
           welcomebanner
           text 400,300, "*** Blinking Cursor Off ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
           setupcolor : print "" : pause 1000
-          blinkingcursor% = 0 : welcomebanner
+          blinkingcursor$ = "Blinking Off" : welcomebanner
         else
         text 400,300, "*** Blinking Cursor On ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
           setupcolor : print "" : pause 1000
-          blinkingcursor% = 1 : welcomebanner
+          blinkingcursor$ = "Blinking On" : welcomebanner
         end if
       case "r" 'run the initial modem setup routine again in case it gets wonky
         colour rgb(black), rgb(red)
@@ -248,11 +244,11 @@ if CHAR_OUT$ <> "" then
     end select
   else
 print #5, CHAR_OUT$;
-      if linefeeds% = 1 and CHAR_OUT$ = chr$(13) then
+      if linefeedstate$ = "LF On" and CHAR_OUT$ = chr$(13) then
         print #5, ""
       end if
 end if
-  if echo% = 1 and CHAR_OUT$ <> "" then
+  if echosetting$ = "Echo On" and CHAR_OUT$ <> "" then
       print CHAR_OUT$;
       if CHAR_OUT$ = chr$(13) then 'workaround for mmbasic bug??
         print ""
@@ -260,7 +256,7 @@ end if
   end if
 end if
 end if
-  if blinkingcursor% = 1 then
+  if blinkingcursor$ = "Blinking On" then
     second$ = right$(time$, 1)
     numtime% = val(second$)
     if numtime% <> cycles% and underscore% = 1 then
@@ -287,22 +283,8 @@ line input #7, echosetting$
 line input #7, comportstr$
 line input #7, text_colorstr$
 line input #7, comspeed$
+line input #7, blinkingcursor$
 close #7
-  if comporttype$ = "RS-232 Serial" then
-    rs232% = 1
-  else
-    rs232% = 0
-  end if
-  if linefeedstate$ = "LF On" then
-    linefeeds% = 1
-  else
-    linefeeds% = 0
-  end if
-  if echosetting$ = "Echo On" then
-    echo% = 1
-  else
-    echo% = 0
-  end if
   select case text_colorstr$
     case "White"
     text_color = 1
@@ -323,6 +305,7 @@ print #7, echosetting$
 print #7, comportstr$
 print #7, text_colorstr$
 print #7, comspeed$
+print #7, blinkingcursor$
 close #7
 end sub
 
@@ -416,6 +399,7 @@ end sub
 sub pickcolor
 local textchoice$
 print ""
+print ""
 input "Which color do you want 1.White [DEFAULT], 2.Amber, or 3.Green "; textchoice$
 select case textchoice$
   case "","1" ' hitting enter or 1
@@ -443,9 +427,9 @@ print "2.Yes"
 input "Make Selection;"; lfchoice$
 select case lfchoice$
   case "", "1" ' hitting enter or 1
-    linefeeds% = 0 : linefeedstate$ = "LF Off" : print "Line Feeds will not be sent."
+    linefeedstate$ = "LF Off" : print "Line Feeds will not be sent."
   case "2"
-    linefeeds% = 1 : linefeedstate$ = "LF On" :  print "Line Feeds will be sent."
+    linefeedstate$ = "LF On" :  print "Line Feeds will be sent."
   case else
     print "Invalid Selection, please try again."
     pause 1200
@@ -464,9 +448,9 @@ print "2.Yes"
 input "Make Selection;"; echochoice$
 select case echochoice$
   case "", "1" ' hitting enter or 1
-    echo% = 0 : echosetting$ = "Echo Off" : print "Local Echo is Off."
+    echosetting$ = "Echo Off" : print "Local Echo is Off."
   case "2"
-    echo% = 1 : echosetting$ = "Echo On"  : print "Local Echo is On."
+    echosetting$ = "Echo On"  : print "Local Echo is On."
   case else
     print "Invalid Selection, please try again."
     pause 1200
@@ -508,11 +492,9 @@ print "2) RS-232 Serial"
 input "Make Selection: ", comtype$
 select case comtype$
   case "", "1" 'hitting enter or 1
-'    rs232% = 0 ' 0 means TTL
     comporttype$ = "TTL Serial" 'this string is important for the settings.cfg file!
     print "TTL Serial Selected."
   case "2"
-'    rs232% = 1 ' 1 is Inverted RS232 levels
     comporttype$ = "RS-232 Serial"
     print "RS-232 Serial Selected."
   case else
@@ -699,29 +681,22 @@ end sub
 
 
 sub hangup
-  colour rgb(black), rgb(red)
   print chr$(13); chr$(10); "*** DISCONNECTING ***"
-  colour rgb(white), rgb(black)
     onlineflag% = 0 'disable incoming data display while hanging up
       print #5; chr$(13); chr$(10)
       pause 1200 'take our time. too fast and modem will ignore
       print #5; chr$(43);chr$(43);chr$(43);
       pause 1500 'take our time. too fast and modem will ignore
-      print ""
+      print "" : pause 100
       print #5;"ATH0"
-  colour rgb(black), rgb(red)
     print "*** DISCONNECTED ***"
-      setupcolor
 onlineflag% = 1 'back online
 end sub
 
 
 sub termexit
-  colour rgb(red), rgb(black)
   close #5
-  colour rgb(black), rgb(red)
   print chr$(13); chr$(10); "*** EXITING TERMINAL ***"
-  setupcolor
   gui cursor off
 pause 750
 end
@@ -747,9 +722,9 @@ end sub
 sub comsettings
 local comwindow$
   const ox = 20
-  const oy = 13
+  const oy = 6
   cls
-  box ox*fwidth%, oy*fheight%, 60*fwidth%, 17*fheight%, 1,,rgb(black)
+  box ox*fwidth%, oy*fheight%, 60*fwidth%, 19*fheight%, 1,,rgb(black)
   print @((ox+2)*fwidth%,(oy+1)*fheight%) "CURRENT COM PORT SETTINGS";
   print @((ox+2)*fwidth%,(oy+2)*fheight%) "-------------------------";
   print @((ox+2)*fwidth%,(oy+3)*fheight%) "A.COM PORT                :",comportstr$
@@ -762,9 +737,11 @@ local comwindow$
   print @((ox+2)*fwidth%,(oy+10)*fheight%)"H.SEND LINE FEED AFTER CR :",linefeedstate$
   print @((ox+2)*fwidth%,(oy+11)*fheight%)"I.INIT STRING             :",modeminitstring$
   print @((ox+2)*fwidth%,(oy+12)*fheight%)"J.LOCAL ECHO              :",echosetting$
-  print @((ox+2)*fwidth%,(oy+13)*fheight%)"";
-  print @((ox+2)*fwidth%,(oy+14)*fheight%)"To change settings, enter letter or hit enter to exit.";
-  print @((ox+2)*fwidth%,(oy+15)*fheight%)"Enter S) to save. Make Selection"; : input comwindow$,
+  print @((ox+2)*fwidth%,(oy+13)*fheight%)"K.FONT COLOR              :",text_colorstr$
+  print @((ox+2)*fwidth%,(oy+14)*fheight%)"L.BLINKING CURSOR         :",blinkingcursor$
+  print @((ox+2)*fwidth%,(oy+15)*fheight%)"";
+  print @((ox+2)*fwidth%,(oy+16)*fheight%)"To change settings, enter letter or hit enter to exit.";
+  print @((ox+2)*fwidth%,(oy+17)*fheight%)"Enter S) to save. Make Selection"; : input comwindow$,
 select case comwindow$
   case "" ' they hit enter
     print @(0,420) "Returning to terminal."
@@ -794,6 +771,21 @@ select case comwindow$
     changeinitstring : pause 1200 : comsettings
   case "j", "J"
     changeecho : pause 1200 : comsettings
+  case "k", "K"
+    pickcolor : pause 1200 : comsettings
+  case "l", "L"
+        if blinkingcursor$ = "Blinking On" then
+          cls
+          text 400,300, "*** Blinking Cursor Off ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
+          setupcolor : print "" : pause 1000
+          blinkingcursor$ = "Blinking Off" : cls
+        else
+          cls
+          text 400,300, "*** Blinking Cursor On ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
+          setupcolor : print "" : pause 1000
+          blinkingcursor$ = "Blinking On" : cls
+        end if
+    pause 1200 : comsettings
   case "s", "S"
     print @(0,420) "Saving Configuration to settings.cfg"
     saveconfig : pause 1500 : comsettings
