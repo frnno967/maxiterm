@@ -104,25 +104,27 @@ terminal
 
 sub terminal
 do 'user input routine
-x% = MM.INFO(HPOS)
-y% = MM.INFO(VPOS)
-  if x% >= 800 then
-  x% = x% - 1
+  if x% <> MM.INFO(HPOS) or y% <> MM.INFO(VPOS) then 'only update vars when POS changes
+  x% = MM.INFO(HPOS)
+  y% = MM.INFO(VPOS)
+    if x% >= 800 then
+    x% = 799 'for some reason x% exceeds 800 sometimes, causing crash in GUI CURSOR
+    end if
+  gui cursor x%,y% 'update the cursor position variables.
   end if
-gui cursor x%,y%
-CHAR_OUT$ = INKEY$
+CHAR_OUT$ = INKEY$ 'typed input from terminal
 if CHAR_OUT$ <> "" then
-  if CHAR_OUT$ = chr$(137) then
+  if CHAR_OUT$ = chr$(137) then 'Page UP button
     download
   end if
-  if CHAR_OUT$ = chr$(136) then
-    CHAR_OUT$ = "" : upload
+  if CHAR_OUT$ = chr$(136) then 'Page Down button
+    CHAR_OUT$ = "" : upload 'sending a CRLF first so buffer will be clear
   end if
   feature$ = getchar$()'typing processed by getchar routine to watch for modifier keys
     if altflag% = 1 then 'check for ALT being asserted
       select case feature$ 'turn all characters to lowercase
       case "a" 'show the autodial phone book screen
-        gui cursor hide : phonebook
+        gui cursor hide : phonebook 
           if blinkingcursor$ = "Blinking On" then
           gui cursor show
           end if
@@ -138,7 +140,7 @@ if CHAR_OUT$ <> "" then
       case "c" 'clear the existing screen contents
         text 400,300, "  CLEARING SCREEN  ", "CM",1,1, RGB(BLACK), RGB(WHITE)
         pause 750 : welcomebanner
-      case "d" ' Not implemented yet.
+      case "d" ' List files on SD card or turn on DEBUG mode when holding WIN key too.
         if winflag% = 1 then
           if debug% = 0 then
             colour rgb(black), rgb(red)
@@ -150,51 +152,11 @@ if CHAR_OUT$ <> "" then
             setupcolor : debug% = 0
           end if
         else
-          gui cursor hide : listfiles
+          gui cursor hide : listfiles 'list the files
           if blinkingcursor$ = "Blinking On" then
           gui cursor show
           end if
         end if
-      case "f" 'change the font color again
-        gui cursor hide : pickcolor : setupcolor
-          if blinkingcursor$ = "Blinking On" then
-          gui cursor show
-          end if
-      case "i" 're-initialize the modem
-        gui cursor hide : colour rgb(black), rgb(red)
-        print "*** SENDING MODEM INITIALIZATION ***" : setupcolor : modeminit
-          if blinkingcursor$ = "Blinking On" then
-          gui cursor show
-          end if
-      case "l" ' change the line feed TX setting
-        gui cursor hide : cls : changelinefeeds : welcomebanner
-          if blinkingcursor$ = "Blinking On" then
-          gui cursor show
-          end if
-      case "x" 'hangup the modem/close the connection
-        echosetting$ = "Echo Off" : hangup
-      case "q" 'exit the terminal
-        termexit
-      case "s" 'enable annoying beep sound for every key press
-        if soundflag% = 0 then
-          gui cursor hide
-          welcomebanner : text 400,300, "*** Sound On ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
-          setupcolor : print "" : pause 1000
-          welcomebanner : soundflag% = 1
-          if blinkingcursor$ = "Blinking On" then
-          gui cursor show
-          end if
-        else
-          gui cursor hide
-          welcomebanner : text 400,300, "*** Sound Off ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
-          setupcolor : print "" : pause 1000
-          welcomebanner : soundflag% = 0
-          if blinkingcursor$ = "Blinking On" then
-          gui cursor show
-          end if
-        end if
-      case "h" 'user help screen
-          gui cursor hide : cls : dialogHelp
       case "e" 'turn on local echo in case modem isn't set to echo
         if echosetting$ = "Echo On" then
           gui cursor hide
@@ -213,11 +175,48 @@ if CHAR_OUT$ <> "" then
           gui cursor show
           end if
         end if
+      case "f" 'change the font color again
+        gui cursor hide : pickcolor : setupcolor
+          if blinkingcursor$ = "Blinking On" then
+          gui cursor show
+          end if
+      case "h" 'user help screen
+          gui cursor hide : cls : dialogHelp
+      case "i" 're-initialize the modem
+        gui cursor hide : colour rgb(black), rgb(red)
+        print "*** SENDING MODEM INITIALIZATION ***" : setupcolor : modeminit
+          if blinkingcursor$ = "Blinking On" then
+          gui cursor show
+          end if
+      case "l" ' change the line feed TX setting
+        gui cursor hide : cls : changelinefeeds : welcomebanner
+          if blinkingcursor$ = "Blinking On" then
+          gui cursor show
+          end if
       case "p" 'show the current com port settings
         gui cursor hide : comsettings
-      case "v" 'show the credits screen
-        if winflag% = 1 then 'credits screen takes ALT and WIN keys to show
-          credits
+      case "q" 'exit the terminal
+        termexit
+      case "r" 'run the initial modem setup routine again in case it gets wonky
+        print "*** RESETTING MODEM ***" : modemreset : pause 250
+        modeminit : pause 250 : modeminfo
+      case "s" 'enable annoying beep sound for every key press
+        if soundflag% = 0 then
+          gui cursor hide
+          welcomebanner : text 400,300, "*** Sound On ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
+          setupcolor : print "" : pause 1000
+          welcomebanner : soundflag% = 1
+          if blinkingcursor$ = "Blinking On" then
+          gui cursor show
+          end if
+        else
+          gui cursor hide
+          welcomebanner : text 400,300, "*** Sound Off ***", "CM",1,1, RGB(BLACK), RGB(WHITE)
+          setupcolor : print "" : pause 1000
+          welcomebanner : soundflag% = 0
+          if blinkingcursor$ = "Blinking On" then
+          gui cursor show
+          end if
         end if
       case "t" 'change the com port type, TTL or RS-232 levels
         gui cursor hide : setcomtype : startcomport
@@ -235,10 +234,12 @@ if CHAR_OUT$ <> "" then
           setupcolor : print "" : pause 1000
           blinkingcursor$ = "Blinking On" : welcomebanner
         end if
-      case "r" 'run the initial modem setup routine again in case it gets wonky
-        colour rgb(black), rgb(red)
-        print "*** RESETTING MODEM ***" : setupcolor : modemreset : pause 250
-        modeminit : pause 250 : modeminfo
+      case "v" 'show the credits screen
+        if winflag% = 1 then 'credits screen takes ALT and WIN keys to show
+          credits
+        end if
+      case "x" 'hangup the modem/close the connection
+        echosetting$ = "Echo Off" : hangup
     end select
   else
 print #5, CHAR_OUT$;
@@ -248,7 +249,7 @@ print #5, CHAR_OUT$;
 end if
   if echosetting$ = "Echo On" and CHAR_OUT$ <> "" then
       print CHAR_OUT$;
-      if CHAR_OUT$ = chr$(13) then 'workaround for mmbasic bug??
+      if CHAR_OUT$ = chr$(13) then 'workaround for mmbasic bug
         print ""
       end if
   end if
@@ -267,12 +268,14 @@ end if
       let cycles% = numtime%
       underscore% = 1
     end if
+  else
+    gui cursor hide
   end if
 loop
 end sub
 
 
-sub loadconfig
+sub loadconfig 'loading program configuration settings
 open "settings.cfg" for input as #7
 line input #7, comporttype$
 line input #7, linefeedstate$
@@ -294,7 +297,7 @@ close #7
 end sub
 
 
-sub saveconfig
+sub saveconfig 'save program configuration settings
 open "settings.cfg" for output as #7
 print #7, comporttype$
 print #7, linefeedstate$
@@ -308,7 +311,7 @@ close #7
 end sub
 
 
-sub loadphonebook
+sub loadphonebook 'not in any standard phone book format
   if mm.info(FILESIZE "bbslist.cfg") <> -1 then
     open "bbslist.cfg" for input as #6
 line input #6, phonebookentry$(1):line input #6, phonebookusername$(1):line input #6, phonebookpassword$(1)
@@ -326,7 +329,7 @@ end if
 end sub
 
 
-sub savephonebook
+sub savephonebook ''not in any standard phone book format
 open "bbslist.cfg" for output as #6
 print #6, phonebookentry$(1):print #6, phonebookusername$(1):print #6, phonebookpassword$(1)
 print #6, phonebookentry$(2):print #6, phonebookusername$(2):print #6, phonebookpassword$(2)
@@ -342,7 +345,7 @@ close #6
 end sub
 
 
-function getchar$() as string
+function getchar$() as string 'capture special keys pressed during typing
 getchar$ = ""
 keyflag% = keydown(7)
 if keydown(7) > 0 and keyflag% <> lastmodifier% then
@@ -371,7 +374,7 @@ keylast% = keyvalue% : pause 5
 end function
 
 
-sub introscreen
+sub introscreen 'opening intro
   const ox = 35 : const oy = 15 : cls
   box ox*fwidth%, oy*fheight%, 28*fwidth%, 14*fheight%, 1,,rgb(black)
   print @((ox+2)*fwidth%,(oy+1)*fheight%) "        MAXITERM";
@@ -389,12 +392,12 @@ sub introscreen
 end sub
 
 
-sub welcomebanner
+sub welcomebanner 'show the opening text at the top of the screen
 cls : print "Terminal running. ALT-Q to Exit. ALT-H for Help."
 end sub
 
 
-sub pickcolor
+sub pickcolor 'pick your desired font color
 local textchoice$
 print ""
 print ""
@@ -416,7 +419,7 @@ end select
 end sub
 
 
-sub changelinefeeds
+sub changelinefeeds 'choose if you want a LF after your CR's
 local lfchoice$
 print ""
 print "Send Line Feeds after Carriage Return?"
@@ -437,7 +440,7 @@ pause 1200
 end sub
 
 
-sub changeecho
+sub changeecho 'set local echo. NOT ECHO THRU MODEM
 local echochoice$
 print @(0,420)""
 print "Turn on Local Echo?"
@@ -458,7 +461,7 @@ pause 1200
 end sub
 
 
-sub setcomport
+sub setcomport 'COM port selection
 print ""
 input "Choose COM Port, COM 1 [DEFAULT], 2, or 3 "; comchoice$
 select case comchoice$
@@ -480,8 +483,9 @@ startcomport
 end sub
 
 
-sub setcomtype
+sub setcomtype 'choosing RS-232 inverts the logic levels only, not the voltages.
 local comtype$
+onlineflag% = 0 'disable so incoming data doesn't disturb our decision
 print ""
 print ""
 print "Select COM Port Type"
@@ -501,6 +505,7 @@ select case comtype$
     setcomtype
 end select
 startcomport
+onlineflag% = 1 'annnd we're back
 end sub
 
 
@@ -545,7 +550,7 @@ startcomport
 end sub
 
 
-sub setupcolor
+sub setupcolor ' translate our font choice into RGB values
 select case TEXT_COLOR
   case 1
 TERM_COLOR1 = 255
@@ -564,10 +569,10 @@ colour rgb(TERM_COLOR1,TERM_COLOR2,TERM_COLOR3), rgb(black)
 end sub
 
 
-sub startcomport
-ON ERROR SKIP
+sub startcomport 'start the physical COM port
+ON ERROR SKIP 'needed because if the port is already open for next command, we'll crash
 close #5
-ON ERROR ABORT
+ON ERROR ABORT 'back to normal
   if comporttype$ = "RS-232 Serial" then
     open comportstr$+":"+comspeed$+","+"8192"+",get_serial_input"+",INV" as #5
   else
@@ -576,24 +581,24 @@ ON ERROR ABORT
 end sub
 
 
-sub modemreset
+sub modemreset 'usually ATZ
 print #5; modemresetstring$
 pause 250 ' wait for modem to process
 end sub
 
 
-sub modeminit
+sub modeminit 'if no string is saved by the user then use the one from the dim above
 print #5; modeminitstring$
 pause 250 'wait for modem to process
 end sub
 
 
-sub modeminfo
+sub modeminfo 'Ask modem for info with ATI
 print #5; modeminfostring$
 end sub
 
 
-sub get_serial_input
+sub get_serial_input 'collect the data from the serial port
   if xmodem_up$<>"" or xmodem_down$<>"" then
     CHARS_IN$ = input$(1,#5) ' only one char at a time
     if CHARS_IN$ <> "" then
@@ -613,10 +618,10 @@ sub get_serial_input
 end sub
 
 
-sub terminalonline
-    colour rgb(black), rgb(red)
+sub terminalonline 'just letting the user know we're ready to boogie
     print chr$(13); chr$(10); "*** TERMINAL ONLINE ***"
     setupcolor
+    print ""
 end sub
 
 
@@ -626,9 +631,7 @@ onlineflag% = 0
 print "Xmodem Download"
 input "Enter Filename: "; receivefile$
     if receivefile$ = "" then
-      colour rgb(black), rgb(red)
       print chr$(13); chr$(10); "*** Download Cancelled ***"
-      setupcolor
       pause 1500
       welcomebanner
       terminal
@@ -636,12 +639,6 @@ input "Enter Filename: "; receivefile$
     print "Please wait, downloading "; receivefile$
     print ""
     _xmodem_recv receivefile$
-    onlineflag% = 1
-  end if
-  if mm.errno = 0 then
-    onlineflag% = 0
-    print chr$(13); chr$(10);"Download Complete.",
-    print ""
     onlineflag% = 1
   end if
 end sub
@@ -653,9 +650,7 @@ print "Xmodem Upload"
 FileDialog(NameOfFile$())   ' no options so allow any file to be selected
   if NameOfFile$(0) = "" then
     welcomebanner
-    colour rgb(black), rgb(red)
     print chr$(13); chr$(10); "*** Upload Cancelled ***"
-    setupcolor
     pause 1500
     terminal
   else
@@ -663,10 +658,6 @@ FileDialog(NameOfFile$())   ' no options so allow any file to be selected
     print "Please wait, uploading "; NameOfFile$(0)
     _xmodem_send NameOfFile$(0)
   end if
-'  if mm.errno <> 0 then Print "Upload Error: ";mm.errmsg$
-'      end if
-'    print "Exiting Upload."
-'  end if
 end sub
 
 
@@ -684,11 +675,12 @@ sub hangup
       print #5; chr$(13); chr$(10)
       pause 1200 'take our time. too fast and modem will ignore
       print #5; chr$(43);chr$(43);chr$(43);
+      print "+++"
       pause 1500 'take our time. too fast and modem will ignore
       print "" : pause 100
-      print #5;"ATH0"
-    print "*** DISCONNECTED ***"
-onlineflag% = 1 'back online
+      print #5; " ATH0"
+      print "*** DISCONNECTED ***"
+    onlineflag% = 1 'back online
 end sub
 
 
@@ -723,8 +715,8 @@ local comwindow$
   const oy = 6
   cls
   box ox*fwidth%, oy*fheight%, 60*fwidth%, 19*fheight%, 1,,rgb(black)
-  print @((ox+2)*fwidth%,(oy+1)*fheight%) "CURRENT COM PORT SETTINGS";
-  print @((ox+2)*fwidth%,(oy+2)*fheight%) "-------------------------";
+  print @((ox+2)*fwidth%,(oy+1)*fheight%) "COM PORT AND OTHER SETTINGS";
+  print @((ox+2)*fwidth%,(oy+2)*fheight%) "---------------------------";
   print @((ox+2)*fwidth%,(oy+3)*fheight%) "A.COM PORT                :",comportstr$
   print @((ox+2)*fwidth%,(oy+4)*fheight%) "B.BAUD RATE               :",comspeed$
   print @((ox+2)*fwidth%,(oy+5)*fheight%) "C.COM PORT TYPE           :",comporttype$
@@ -807,7 +799,7 @@ sub dialoghelp
   print @((ox+2)*fwidth%,(oy+7)*fheight%) "ALT-H Help Menu";
   print @((ox+2)*fwidth%,(oy+8)*fheight%) "ALT-I Send Modem Initialization";
   print @((ox+2)*fwidth%,(oy+9)*fheight%) "ALT-L Line Feed TX Setting";
-  print @((ox+2)*fwidth%,(oy+10)*fheight%)"ALT-P COM Port Settings";
+  print @((ox+2)*fwidth%,(oy+10)*fheight%)"ALT-P Program and COM Settings";
   print @((ox+2)*fwidth%,(oy+11)*fheight%)"ALT-Q Quit and Exit Terminal";
   print @((ox+2)*fwidth%,(oy+12)*fheight%)"ALT-R Reset the Modem";
   print @((ox+2)*fwidth%,(oy+13)*fheight%)"ALT-S Key Sound on/off";
@@ -1351,7 +1343,8 @@ sub _xmodem_dim
   dim xmodem_last_recv
   dim xmodem_up$
   dim xmodem_down$
-  dim xmodem_option_crnul%:xmodem_option_crnul%=1
+'  dim xmodem_option_crnul%:xmodem_option_crnul%=1
+  dim xmodem_option_crnul%:xmodem_option_crnul%=0
   dim xmodem_lastrx$:xmodem_lastrx$=""
 end sub '_xmodem_dim_const
 
