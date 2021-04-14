@@ -12,4 +12,4 @@ Different font/type options
 Archiving/Unarchiving for file transfers from within the program
 
 Bugs:
-Blinking cursor support is currently only for white font color and has so really weird flashing rate. Might be a bug in GUI CURSOR 5.06+. Might want to avoid using it if easily triggered by fast flashing.
+Blinking cursor support is currently only for white font color right now. 
