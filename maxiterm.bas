@@ -73,9 +73,26 @@ dim numtime%, cycles%, underscore% 'for blinking cursor
 dim blinkingcursor$ = "Blinking Off" 'for turning blinking cursor on or off
 dim x%, y%, xoffset%, yoffset%
 dim transferdone% = 0 ' for ending transfers
+dim bold% = 0
+dim fg_colour1 = 172
+dim fg_colour2 = 172
+dim fg_colour3 = 172
+dim bg_colour1 = 0
+dim bg_colour2 = 0
+dim bg_colour3 = 0
+dim save_x% = 0
+dim save_y% = 0
+dim escape_flag% = 0
+
+dim params%(9)
+dim param_at% = 0
+
+
 gui cursor load "cursor.spr" 'cursor sprite for blinking cursor function
 gui cursor on 2,x%,y%
 gui cursor hide
+
+
 _xmodem_dim
 
 'main function
@@ -114,15 +131,13 @@ do 'user input routine
   end if
 CHAR_OUT$ = INKEY$ 'typed input from terminal
 if CHAR_OUT$ <> "" then
-  if CHAR_OUT$ = chr$(137) then 'Page UP button
-    download
-  end if
-  if CHAR_OUT$ = chr$(136) then 'Page Down button
-    CHAR_OUT$ = "" : upload 'sending a CRLF first so buffer will be clear
-  end if
   feature$ = getchar$()'typing processed by getchar routine to watch for modifier keys
     if altflag% = 1 then 'check for ALT being asserted
       select case feature$ 'turn all characters to lowercase
+      case chr$(137) 'Page UP button
+        download
+      case chr$(136) 'Page Down button
+        CHAR_OUT$ = "" : upload 'sending a CRLF first so buffer will be clear
       case "a" 'show the autodial phone book screen
         gui cursor hide : phonebook 
           if blinkingcursor$ = "Blinking On" then
@@ -242,10 +257,37 @@ if CHAR_OUT$ <> "" then
         echosetting$ = "Echo Off" : hangup
     end select
   else
-print #5, CHAR_OUT$;
-      if linefeedstate$ = "LF On" and CHAR_OUT$ = chr$(13) then
-        print #5, ""
-      end if
+      select case asc(CHAR_OUT$)
+        case 128
+          'up
+          print #5, CHR$(27) + "[A";
+        case 129
+          'down
+          print #5, CHR$(27) + "[B";
+        case 130
+          'left
+          print #5, CHR$(27) + "[D";
+        case 131
+          'right
+          print #5, CHR$(27) + "[C";
+        case 136
+          'page up
+          print #5, CHR$(27) + "[V";
+        case 137
+          'page down
+          print #5, CHR$(27) + "[U";
+        case 134
+          'home
+          print #5, CHR$(27) + "[H";
+        case 135
+          'end
+          print #5, CHR$(27) + "[K";
+        case else
+          print #5, CHAR_OUT$;
+          if linefeedstate$ = "LF On" and CHAR_OUT$ = chr$(13) then
+            print #5, ""
+          end if
+       end select
 end if
   if echosetting$ = "Echo On" and CHAR_OUT$ <> "" then
       print CHAR_OUT$;
@@ -553,9 +595,9 @@ end sub
 sub setupcolor ' translate our font choice into RGB values
 select case TEXT_COLOR
   case 1
-TERM_COLOR1 = 255
-TERM_COLOR2 = 255
-TERM_COLOR3 = 255
+TERM_COLOR1 = fg_colour1
+TERM_COLOR2 = fg_colour2
+TERM_COLOR3 = fg_colour3
   case 2
 TERM_COLOR1 = 255
 TERM_COLOR2 = 176
@@ -565,7 +607,7 @@ TERM_COLOR1 = 51
 TERM_COLOR2 = 255
 TERM_COLOR3 = 0
 end select
-colour rgb(TERM_COLOR1,TERM_COLOR2,TERM_COLOR3), rgb(black)
+colour rgb(TERM_COLOR1, TERM_COLOR2, TERM_COLOR3), rgb(bg_colour1,bg_colour2,bg_colour3)
 end sub
 
 
@@ -599,20 +641,289 @@ end sub
 
 
 sub get_serial_input 'collect the data from the serial port
+  local i%
+  local cursor_x%
+  local cursor_y%
+
   if xmodem_up$<>"" or xmodem_down$<>"" then
     CHARS_IN$ = input$(1,#5) ' only one char at a time
     if CHARS_IN$ <> "" then
       _xmodem_handler CHARS_IN$
     end if
   else
-    CHARS_IN$ = input$(LOC(#5),#5)
     if onlineflag% = 1 then
-      print CHARS_IN$;
-        if soundflag% = 1 AND CHARS_IN$ = chr$(13) then
-          ON ERROR IGNORE
-          PLAY mp3 "sound.mp3"
-          On ERROR ABORT
+'      print CHARS_IN$;
+
+      CHARS_IN$ = input$(1,#5)
+      if CHARS_IN$ <> "" then
+        if escape_flag% = 0 then
+          if CHARS_IN$ = CHR$(27) then
+            escape_flag% = 1
+          else
+            print CHARS_IN$;
+            if soundflag% = 1 AND CHARS_IN$ = chr$(13) then
+              ON ERROR IGNORE
+              PLAY mp3 "sound.mp3"
+              On ERROR ABORT
+            end if
+          end if
+        elseif escape_flag% = 1 then
+          if CHARS_IN$ = "[" then
+            escape_flag% = 2
+            for i% = 0 to 9
+              params%(i%) = 0
+            next i%
+            param_at% = 0
+          else
+            escape_flag% = 0
+          end if
+        elseif escape_flag% = 2 then
+          if CHARS_IN$ = ";" then
+            param_at% = param_at% + 1
+          elseif asc(CHARS_IN$) >= 48 and asc(CHARS_IN$) <= 57 then
+            if param_at% = 0 then
+              param_at% = 1
+            endif
+            params%(param_at% - 1) = params%(param_at% - 1) * 10 + (ASC(CHARS_IN$) - ASC("0"))
+          else
+            escape_flag% = 3
+          end if
         end if
+
+        if escape_flag% = 3 then
+          select case CHARS_IN$
+            case "m"
+              for i% = 1 to param_at%
+                select case params%(i% - 1)
+                  case 0
+                    bold% = 0
+                    fg_colour1 = 170
+                    fg_colour2 = 170
+                    fg_colour3 = 170
+                    bg_colour1 = 0
+                    bg_colour2 = 0
+                    bg_colour3 = 0
+                  case 1
+                    bold% = 1
+                  case 30
+                    if bold% = 1 then
+                      fg_colour1 = 85
+                      fg_colour2 = 85
+                      fg_colour3 = 85
+                    else
+                      fg_colour1 = 0
+                      fg_colour2 = 0
+                      fg_colour3 = 0
+                    end if
+                  case 31
+                    if bold% = 1 then
+                      fg_colour1 = 255
+                      fg_colour2 = 85
+                      fg_colour3 = 85
+                    else
+                      fg_colour1 = 170
+                      fg_colour2 = 0
+                      fg_colour3 = 0
+                    end if
+                  case 32
+                    if bold% = 1 then
+                      fg_colour1 = 85
+                      fg_colour2 = 255
+                      fg_colour3 = 85
+                    else
+                      fg_colour1 = 0
+                      fg_colour2 = 170
+                      fg_colour3 = 0
+                    end if
+                  case 33
+                    if bold% = 1 then
+                      fg_colour1 = 255
+                      fg_colour2 = 255
+                      fg_colour3 = 85
+                    else
+                      fg_colour1 = 170
+                      fg_colour2 = 85
+                      fg_colour3 = 0
+                    end if
+                  case 34
+                    if bold% = 1 then
+                      fg_colour1 = 85
+                      fg_colour2 = 85
+                      fg_colour3 = 255
+                    else
+                      fg_colour1 = 0
+                      fg_colour2 = 0
+                      fg_colour3 = 170
+                    end if
+                  case 35
+                    if bold% = 1 then
+                      fg_colour1 = 255
+                      fg_colour2 = 85
+                      fg_colour3 = 255
+                    else
+                      fg_colour1 = 170
+                      fg_colour2 = 0
+                      fg_colour3 = 170
+                    end if
+                  case 36
+                    if bold% = 1 then
+                      fg_colour1 = 85
+                      fg_colour2 = 255
+                      fg_colour3 = 255
+                    else
+                      fg_colour1 = 0
+                      fg_colour2 = 170
+                      fg_colour3 = 170
+                    end if
+                  case 37
+                    if bold% = 1 then
+                      fg_colour1 = 255
+                      fg_colour2 = 255
+                      fg_colour3 = 255
+                    else
+                      fg_colour1 = 170
+                      fg_colour2 = 170
+                      fg_colour3 = 170
+                    end if
+                  case 40
+                    bg_colour1 = 0
+                    bg_colour2 = 0
+                    bg_colour3 = 0
+                  case 41
+                    bg_colour1 = 170
+                    bg_colour2 = 0
+                    bg_colour3 = 0
+                  case 42
+                    bg_colour1 = 0
+                    bg_colour2 = 170
+                    bg_colour3 = 0
+                  case 43
+                    bg_colour1 = 170
+                    bg_colour2 = 85
+                    bg_colour3 = 0
+                  case 44
+                    bg_colour1 = 0
+                    bg_colour2 = 0
+                    bg_colour3 = 170
+                  case 45
+                    bg_colour1 = 170
+                    bg_colour2 = 0
+                    bg_colour3 = 170
+                  case 46
+                    bg_colour1 = 0
+                    bg_colour2 = 170
+                    bg_colour3 = 170
+                  case 47
+                    bg_colour1 = 170
+                    bg_colour2 = 170
+                    bg_colour3 = 170
+                end select
+              next i%
+              colour RGB(fg_colour1, fg_colour2, fg_colour3), RGB(bg_colour1, bg_colour2, bg_colour3)
+            case "H","f"
+              if params%(1) > 0 then
+                params%(1) = params%(1) - 1
+              end if
+
+              if params%(0) > 0 then
+                params%(0) = params%(0) - 1
+              end if
+              
+              cursor_x% = params%(1)
+              cursor_y% = params%(0)
+
+              if cursor_x% < 0 then 
+                cursor_x% = 0
+              elseif cursor_x% > MM.HRES / fwidth% - 1 then
+                cursor_x% = MM.HRES / fwidth% - 1
+              end if
+
+              if cursor_y% < 0 then
+                cursor_y% = 0
+              elseif cursor_y% > MM.VRES / fheight% - 1 then
+                cursor_y% = MM.VRES / fheight% - 1
+              end if
+
+              print @(fwidth% * cursor_x%, fheight% * cursor_y%) "";
+            case "A"
+              if param_at% > 0 then
+                cursor_y% = MM.INFO(VPOS) - fheight% * params%(0)
+              else
+                cursor_y% = MM.INFO(VPOS) - fheight%
+              end if
+              if cursor_y% >= 0 then
+                print @(MM.INFO(HPOS), cursor_y%) "";
+              else
+                print @(MM.INFO(HPOS), 0) "";
+              end if
+            case "B"
+              if param_at% > 0 then
+                cursor_y% = MM.INFO(VPOS) + fheight% * params%(0)
+              else
+                cursor_y% = MM.INFO(VPOS) + fheight%
+              end if
+              if cursor_y% <= MM.VRES - fheight% then
+                print @(MM.INFO(HPOS), cursor_y%) "";
+              else
+                print @(MM.INFO(HPOS), MM.VRES - fheight%) "";
+              end if
+            case "C"
+              if param_at% > 0 then
+                cursor_x% = MM.INFO(HPOS) + fwidth% * params%(0)
+              else
+                cursor_x% = MM.INFO(HPOS) + fwidth%
+              end if
+              if cursor_x% <= MM.HRES - fwidth% then
+                print @(cursor_x%, MM.INFO(VPOS)) "";
+              else
+                print @(MM.HRES - fwidth%, MM.INFO(VPOS)) "";
+              end if
+            case "D"
+              if param_at% > 0 then
+                cursor_x% = MM.INFO(HPOS) - fwidth% * params%(0)
+              else
+                cursor_x% = MM.INFO(HPOS) - fwidth%
+              end if
+              if cursor_x% >= 0 then
+                print @(cursor_x%, MM.INFO(VPOS)) "";
+              else
+                print @(0, MM.INFO(VPOS)) "";
+              end if
+            case "s"
+              save_x% = MM.INFO(HPOS)
+              save_y% = MM.INFO(VPOS)
+            case "u"
+              print @(save_x%, save_y%) "";
+            case "J"
+              if param_at% = 0 then
+                box 0, MM.INFO(VPOS), MM.HRES, MM.VRES,0, , rgb(bg_colour1, bg_colour2, bg_colour3)
+                print @(0, 0) "";
+              else
+                if params%(0) = 1 then
+                  box 0, 0, MM.HRES, MM.INFO(VPOS) - fheight%,0,, rgb(bg_colour1, bg_colour2, bg_colour3)
+                else if params%(0) = 2 then
+                  box 0, 0, MM.HRES, MM.VRES,0, , rgb(bg_colour1, bg_colour2, bg_colour3)
+                end if
+              end if
+            case "K"
+              if params%(0) = 0 then
+                box MM.INFO(HPOS), MM.INFO(VPOS), MM.HRES - MM.INFO(HPOS), fheight%,0, , rgb(bg_colour1, bg_colour2, bg_colour3)
+              else
+                if params%(0) = 1 then
+                  box 0, MM.INFO(VPOS), MM.INFO(HPOS), fheight%,0, , rgb(bg_colour1, bg_colour2, bg_colour3)
+                else if params%(0) = 2 then
+                  box 0, MM.INFO(VPOS), MM.HRES, fheight%,0, , rgb(bg_colour1, bg_colour2, bg_colour3)
+                end if
+              end if
+            case "n"
+              if params%(0) = 6 then 'report cursor position
+                print #5, CHR$(27) + "[" + STR$(MM.INFO(VPOS) / fheight% + 1) + ";" + STR$(MM.INFO(HPOS) / fwidth% + 1) + "R"
+              end if
+          end select
+          escape_flag% = 0
+        end if
+
+      end if
     end if
   end if
 end sub
