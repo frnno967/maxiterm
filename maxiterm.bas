@@ -288,7 +288,7 @@ if CHAR_OUT$ <> "" then
             print #5, ""
           end if
        end select
-end if
+  end if
   if echosetting$ = "Echo On" and CHAR_OUT$ <> "" then
       print CHAR_OUT$;
       if CHAR_OUT$ = chr$(13) then 'workaround for mmbasic bug
@@ -705,6 +705,21 @@ sub get_serial_input 'collect the data from the serial port
                     bg_colour3 = 0
                   case 1
                     bold% = 1
+                    if fg_colour1 = 0 then
+                      fg_colour1 = 85
+                    else if fg_colour1 = 170 then
+                      fg_colour1 = 255
+                    end if
+                    if fg_colour2 = 0 then
+                      fg_colour2 = 85
+                    else if fg_colour2 = 170 then
+                      fg_colour2 = 255
+                    end if
+                    if fg_colour3 = 0 then
+                      fg_colour3 = 85
+                    else if fg_colour3 = 170 then
+                      fg_colour3 = 255
+                    end if
                   case 30
                     if bold% = 1 then
                       fg_colour1 = 85
