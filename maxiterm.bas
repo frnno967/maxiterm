@@ -97,6 +97,8 @@ _xmodem_dim
 
 'main function
 cls
+load font "CP437(8x12).FNT"
+font #8
 introscreen 'show the title screen when launched
 pause 2500
 cls
