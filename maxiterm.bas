@@ -723,11 +723,6 @@ sub get_serial_input 'collect the data from the serial port
 
       CHARS_IN$ = LGETSTR$(MCHARS_IN%(), d%, 1)
 
-      if xmodem_up$<>"" or xmodem_down$<>"" then
-        if CHARS_IN$ <> "" then
-          _xmodem_handler CHARS_IN$
-        end if
-      else
         if onlineflag% = 1 then
           if CHARS_IN$ <> "" then
             if escape_flag% = 0 then
@@ -1060,7 +1055,6 @@ sub get_serial_input 'collect the data from the serial port
             end if
           end if
         end if
-      end if
     next d%
   end if
 end sub
@@ -1101,7 +1095,6 @@ FileDialog(NameOfFile$())   ' no options so allow any file to be selected
     welcomebanner
     print chr$(13); chr$(10); "*** Upload Cancelled ***"
     pause 1500
-    'terminal
     exit sub
   else
     cls
@@ -1831,7 +1824,10 @@ end sub '_xmodem_dim_const
 
 sub _xmodem_terminal
   option crlf lf
-
+  local char_in$
+  local MCHARS_IN%(8192)
+  local d%
+  local l%
   if len(xmodem_down$)>0 then
     print "^X to cancel transmission"
     print #5,nak$; ' start download immediately
@@ -1840,12 +1836,40 @@ sub _xmodem_terminal
   xmodem_last_recv = timer
   local key$
   do ' terminal - send pressed keys, send [nak] on timeout
+    l% = LOC(#5)    
+
+    longstring clear MCHARS_IN%()
+
+    do while l% > 0 
+      if l% > 255 then
+        longstring append MCHARS_IN%(), input$(255, #5)
+        l% = l% - 255
+      else
+        longstring append MCHARS_IN%(), input$(l%, #5)
+        l% = 0
+      endif
+      
+    loop
+
+    for d% = 1 to LLEN(MCHARS_IN%())
+      key$ = inkey$
+      if key$ = can$ then
+        print #5;key$;
+        _xmodem_timer_handler key$
+      end if
+      _xmodem_timer_handler ""
+
+      char_in$ = LGETSTR$(MCHARS_IN%(), d%, 1)
+      _xmodem_handler(char_in$)
+    next d%
+
     key$ = inkey$
-    if len(key$) > 0 then
+    if key$ = can$ then
       print #5;key$;
       _xmodem_timer_handler key$
     end if
     _xmodem_timer_handler ""
+
   loop while xmodem_up$<>"" OR xmodem_down$<>""
 
   option crlf crlf
@@ -1980,7 +2004,7 @@ sub _xmodem_handler serial$
       end if
     case 3: ' receiving block, waiting for complete block including checksum
       if len(xmodem_buffer$) < 128 then
-         xmodem_buffer$=xmodem_buffer$+serial$
+         cat xmodem_buffer$, serial$
          xmodem_sum%=(xmodem_sum%+asc(serial$)) and 255
          'print "<";len(xmodem_buffer$);":";asc(serial$)">";
          if len(xmodem_buffer$) = 128 then
