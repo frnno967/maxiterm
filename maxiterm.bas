@@ -445,6 +445,7 @@ end sub
 sub pickcolor 'pick your desired font color
 local textchoice$
 local done%
+setupcolor
 print ""
 print ""
 do
@@ -467,12 +468,14 @@ select case textchoice$
     done% = 0
 end select
 loop until done% = 1
+restorecolor
 end sub
 
 
 sub changelinefeeds 'choose if you want a LF after your CR's
 local lfchoice$
 local done% = 1
+setupcolor
 do
 print ""
 print "Send Line Feeds after Carriage Return?"
@@ -492,12 +495,14 @@ select case lfchoice$
 end select
 pause 1200
 loop until done% = 1
+restorecolor
 end sub
 
 
 sub changeecho 'set local echo. NOT ECHO THRU MODEM
 local echochoice$
 local done% = 1
+setupcolor
 do
 print @(0,420)""
 print "Turn on Local Echo?"
@@ -517,11 +522,13 @@ select case echochoice$
 end select
 pause 1200
 loop until done% = 1
+restorecolor
 end sub
 
 
 sub setcomport 'COM port selection
 local done% = 1
+setupcolor
 do
 print ""
 input "Choose COM Port, COM 1 [DEFAULT], 2, or 3 "; comchoice$
@@ -544,15 +551,17 @@ select case comchoice$
     done% = 0 ' start over
 end select
 loop until done% = 1
+restorecolor
 startcomport
 end sub
 
 
 sub setcomtype 'choosing RS-232 inverts the logic levels only, not the voltages.
+setupcolor
 local comtype$
 local done% = 1
-do
 onlineflag% = 0 'disable so incoming data doesn't disturb our decision
+do
 print ""
 print ""
 print "Select COM Port Type"
@@ -575,11 +584,13 @@ select case comtype$
 end select
 loop until done% = 1
 startcomport
+restorecolor
 onlineflag% = 1 'annnd we're back
 end sub
 
 
 sub setcomspeed
+setupcolor
 onlineflag% = 0 'disable so incoming data doesn't disturb our decision
 local done% = 1
 do
@@ -628,15 +639,16 @@ input "Make Selection: ", comspeedchoice$
 loop until done% = 1
 onlineflag% = 1 'enable so we're back online
 startcomport
+restorecolor
 end sub
 
 
 sub setupcolor ' translate our font choice into RGB values
 select case TEXT_COLOR
   case 1
-TERM_COLOR1 = fg_colour1
-TERM_COLOR2 = fg_colour2
-TERM_COLOR3 = fg_colour3
+TERM_COLOR1 = 170
+TERM_COLOR2 = 170
+TERM_COLOR3 = 170
   case 2
 TERM_COLOR1 = 255
 TERM_COLOR2 = 176
@@ -646,9 +658,12 @@ TERM_COLOR1 = 51
 TERM_COLOR2 = 255
 TERM_COLOR3 = 0
 end select
-colour rgb(TERM_COLOR1, TERM_COLOR2, TERM_COLOR3), rgb(bg_colour1,bg_colour2,bg_colour3)
+colour rgb(TERM_COLOR1, TERM_COLOR2, TERM_COLOR3), rgb(black)
 end sub
 
+sub restorecolor
+    colour rgb(fg_colour1, fg_colour2, fg_colour3), rgb(bg_colour1, bg_colour2, bg_colour3)
+end sub
 
 sub startcomport 'start the physical COM port
 ON ERROR SKIP 'needed because if the port is already open for next command, we'll crash
@@ -1028,9 +1043,11 @@ end sub
 
 
 sub listfiles
+setupcolor
 cls
 FileDialog(NameOfFile$())   ' no options so allow any file to be selected
 welcomebanner
+restorecolor
 end sub
 
 
@@ -1079,6 +1096,7 @@ local comwindow$
 local done% = 1
 const ox = 20
 const oy = 6
+setupcolor
 do
   cls
   box ox*fwidth%, oy*fheight%, 60*fwidth%, 19*fheight%, 1,,rgb(black)
@@ -1150,12 +1168,14 @@ select case comwindow$
     print @(0,420) "Invalid option. Try again." : pause 1500 : done% = 0
 end select
 loop until done% = 1
+restorecolor
 end sub
 
 
 sub dialoghelp
   const ox = 30
   const oy = 15
+  setupcolor
   cls
   box ox*fwidth%, oy*fheight%, 40*fwidth%, 24*fheight%, 1,,rgb(black)
   print @((ox+2)*fwidth%,(oy+1)*fheight%) "ALT-A Autodial Phone Book";
@@ -1181,7 +1201,8 @@ sub dialoghelp
   print @((ox+2)*fwidth%,(oy+21)*fheight%)"ALT+WIN-D Toggle debug on/off";
   print @((ox+2)*fwidth%,(oy+22)*fheight%)"ALT+WIN-V Show Version info";
   do while inkey$ = "" : loop
-welcomebanner
+  welcomebanner
+  restorecolor
 'terminal
 end sub
 
@@ -1189,6 +1210,7 @@ end sub
 sub credits
   const ox = 30
   const oy = 15
+  setupcolor
   cls
   box ox*fwidth%, oy*fheight%, 40*fwidth%, 15*fheight%, 1,,rgb(black)
   print @((ox+2)*fwidth%,(oy+1)*fheight%) "Maxiterm for the Color Maximite 2";
@@ -1205,7 +1227,9 @@ sub credits
   print @((ox+2)*fwidth%,(oy+12)*fheight%)"";
   print @((ox+2)*fwidth%,(oy+13)*fheight%)"Support email: recstudio@gmail.com";
   do while inkey$ = "" : loop
-welcomebanner
+
+  welcomebanner
+  restorecolor
 'terminal
 end sub
 
@@ -1219,6 +1243,7 @@ const ox = 3
 const oy = 3
 
 do
+  setupcolor
   cls
   box ox*fwidth%, oy*fheight%, 94*fwidth%, 20*fheight%, 1,,rgb(black)
   print @((ox+2)*fwidth%,(oy+1)*fheight%) "AUTODIAL PHONE BOOK";
@@ -1310,6 +1335,7 @@ do
         input "Entry # to dial: ", phoneentry%
         print "Dialing entry";phoneentry%;", " phonebookentry$(phoneentry%)
         print #5; "atdt"; phonebookentry$(phoneentry%)"", chr$(13)
+        exit sub
       case "l" 'edit the login for an entry
         print @(0,420) ""
         input "Enter entry to edit: ", phoneentry%
@@ -1351,7 +1377,7 @@ do
         phoneentry% = val(dialchoice$)
         print @(0,420) "Dialing entry ";dialchoice$;", " phonebookentry$(phoneentry%)
         print #5; "atdt"; phonebookentry$(phoneentry%)"", chr$(13)
-        done% = 1
+        exit sub
       case "s" 'save updated phone book to config file
         print @(0,420) "Phonebook Saved."
         savephonebook
@@ -1363,6 +1389,7 @@ do
         done% = 0
       end select
   loop until done% = 1
+  restorecolor
 end sub
 
 
