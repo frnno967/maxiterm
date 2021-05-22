@@ -700,19 +700,28 @@ sub get_serial_input 'collect the data from the serial port
   local d%
   local cursor_x%
   local cursor_y%
-  local MCHARS_IN$
+  local MCHARS_IN%(8192)
   local l%
+
   if LOC(#5) then
     l% = LOC(#5)    
 
-    if l% > 255 then
-      MCHARS_IN$ = input$(255, #5)
-    else
-      MCHARS_IN$ = input$(l%, #5)
-    endif
-    for d% = 1 to LEN(MCHARS_IN$)
+    longstring clear MCHARS_IN%()
 
-      CHARS_IN$ = MID$(MCHARS_IN$, d%, 1)
+    do while l% > 0 
+      if l% > 255 then
+        longstring append MCHARS_IN%(), input$(255, #5)
+        l% = l% - 255
+      else
+        longstring append MCHARS_IN%(), input$(l%, #5)
+        l% = 0
+      endif
+      
+    loop
+
+    for d% = 1 to LLEN(MCHARS_IN%())
+
+      CHARS_IN$ = LGETSTR$(MCHARS_IN%(), d%, 1)
 
       if xmodem_up$<>"" or xmodem_down$<>"" then
         if CHARS_IN$ <> "" then
@@ -720,8 +729,6 @@ sub get_serial_input 'collect the data from the serial port
         end if
       else
         if onlineflag% = 1 then
-    '      print CHARS_IN$;
-'          CHARS_IN$ = input$(1,#5)
           if CHARS_IN$ <> "" then
             if escape_flag% = 0 then
               if CHARS_IN$ = CHR$(27) then
@@ -1396,7 +1403,7 @@ do
         print @(0,420) chr$(10),chr$(13)
         input "Entry # to dial: ", phoneentry%
         print "Dialing entry";phoneentry%;", " phonebookentry$(phoneentry%)
-        print #5; "atdt"; phonebookentry$(phoneentry%)"", chr$(13)
+        print #5; "atdt "; phonebookentry$(phoneentry%)"", chr$(13)
         exit sub
       case "l" 'edit the login for an entry
         print @(0,420) ""
@@ -1438,7 +1445,7 @@ do
       case "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"
         phoneentry% = val(dialchoice$)
         print @(0,420) "Dialing entry ";dialchoice$;", " phonebookentry$(phoneentry%)
-        print #5; "atdt"; phonebookentry$(phoneentry%)"", chr$(13)
+        print #5; "atdt "; phonebookentry$(phoneentry%)"", chr$(13)
         exit sub
       case "s" 'save updated phone book to config file
         print @(0,420) "Phonebook Saved."
