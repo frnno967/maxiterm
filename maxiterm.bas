@@ -315,6 +315,7 @@ end if
   else
     gui cursor hide
   end if
+  get_serial_input()
 loop
 end sub
 
@@ -443,28 +444,36 @@ end sub
 
 sub pickcolor 'pick your desired font color
 local textchoice$
+local done%
 print ""
 print ""
+do
 input "Which color do you want 1.White [DEFAULT], 2.Amber, or 3.Green "; textchoice$
 select case textchoice$
   case "","1" ' hitting enter or 1
     text_color = 1 : text_colorstr$ = "White" : setupcolor
     print "White Selected."
+    done% = 1
   case "2"
     text_color = 2 : text_colorstr$ = "Amber" : setupcolor
     print "Amber Selected."
+    done% = 1
   case "3"
     text_color = 3 : text_colorstr$ = "Green" : setupcolor
     print "Green Selected."
+    done% = 1
   case else
     print "Invalid Selection, please try again."
-    pickcolor
+    done% = 0
 end select
+loop until done% = 1
 end sub
 
 
 sub changelinefeeds 'choose if you want a LF after your CR's
 local lfchoice$
+local done% = 1
+do
 print ""
 print "Send Line Feeds after Carriage Return?"
 print "1.No [DEFAULT]"
@@ -473,19 +482,23 @@ input "Make Selection;"; lfchoice$
 select case lfchoice$
   case "", "1" ' hitting enter or 1
     linefeedstate$ = "LF Off" : print "Line Feeds will not be sent."
+    done% = 1
   case "2"
     linefeedstate$ = "LF On" :  print "Line Feeds will be sent."
+    done% = 1
   case else
     print "Invalid Selection, please try again."
-    pause 1200
-    changelinefeeds
+    done% = 0
 end select
 pause 1200
+loop until done% = 1
 end sub
 
 
 sub changeecho 'set local echo. NOT ECHO THRU MODEM
 local echochoice$
+local done% = 1
+do
 print @(0,420)""
 print "Turn on Local Echo?"
 print "1.No [DEFAULT]"
@@ -494,41 +507,51 @@ input "Make Selection;"; echochoice$
 select case echochoice$
   case "", "1" ' hitting enter or 1
     echosetting$ = "Echo Off" : print "Local Echo is Off."
+    done% = 1
   case "2"
     echosetting$ = "Echo On"  : print "Local Echo is On."
+    done% = 1
   case else
     print "Invalid Selection, please try again."
-    pause 1200
-    changeecho
+    done% = 0
 end select
 pause 1200
+loop until done% = 1
 end sub
 
 
 sub setcomport 'COM port selection
+local done% = 1
+do
 print ""
 input "Choose COM Port, COM 1 [DEFAULT], 2, or 3 "; comchoice$
 select case comchoice$
   case "", "1" 'hitting enter or 1
     comportstr$ = "COM1" :  print "COM1 Selected."
+    done% = 1
   case "2"
     comportstr$ = "COM2" : print "COM2 Selected."
+    done% = 1
   case "3"
     comportstr$ = "COM3" : print "COM3 (via USB Type B port) Selected."
-        if mm.errno <> 0 then
-        Print "Error: ";mm.errmsg$,
-      end if
+    if mm.errno <> 0 then
+      Print "Error: ";mm.errmsg$,
+    end if
+    done% = 1
   case else
-      print "Invalid COM port, please try again."
-      pause 1200 ' wait for them to read the response
-      setcomport ' start over
+    print "Invalid COM port, please try again."
+    pause 1200 ' wait for them to read the response
+    done% = 0 ' start over
 end select
+loop until done% = 1
 startcomport
 end sub
 
 
 sub setcomtype 'choosing RS-232 inverts the logic levels only, not the voltages.
 local comtype$
+local done% = 1
+do
 onlineflag% = 0 'disable so incoming data doesn't disturb our decision
 print ""
 print ""
@@ -540,14 +563,17 @@ select case comtype$
   case "", "1" 'hitting enter or 1
     comporttype$ = "TTL Serial" 'this string is important for the settings.cfg file!
     print "TTL Serial Selected."
+    done% = 1
   case "2"
     comporttype$ = "RS-232 Serial"
     print "RS-232 Serial Selected."
+    done% = 1
   case else
     print "Invalid selection, please try again."
     pause 1200
-    setcomtype
+    done% = 0
 end select
+loop until done% = 1
 startcomport
 onlineflag% = 1 'annnd we're back
 end sub
@@ -555,6 +581,8 @@ end sub
 
 sub setcomspeed
 onlineflag% = 0 'disable so incoming data doesn't disturb our decision
+local done% = 1
+do
 print ""
 print ""
 print "Select COM Port Speed"
@@ -570,25 +598,34 @@ input "Make Selection: ", comspeedchoice$
   select case comspeedchoice$
     case "", "8" ' the default choice is fastest
       print "115200 Selected." : comspeed$ = "115200"
+      done% = 1
     case "1"
       print "1200 Selected." : comspeed$ = "1200"
+      done% = 1
     case "2"
       print "2400 Selected." : comspeed$ = "2400"
+      done% = 1
     case "3"
       print "4800 Selected." : comspeed$ = "4800"
+      done% = 1
     case "4"
       print "9600 Selected." : comspeed$ = "9600"
+      done% = 1
     case "5"
       print "19200 Selected." : comspeed$ = "19200"
+      done% = 1
     case "6"
       print "38400 Selected." : comspeed$ = "38400"
+      done% = 1
     case "7"
       print "57600 Selected." : comspeed$ = "57600"
+      done% = 1
     case else
       print "Invalid selection. Please try again."
       pause 1200
-      setcomspeed
+      done% = 0
   end select
+loop until done% = 1
 onlineflag% = 1 'enable so we're back online
 startcomport
 end sub
@@ -618,9 +655,9 @@ ON ERROR SKIP 'needed because if the port is already open for next command, we'l
 close #5
 ON ERROR ABORT 'back to normal
   if comporttype$ = "RS-232 Serial" then
-    open comportstr$+":"+comspeed$+","+"8192"+",get_serial_input"+",INV" as #5
+    open comportstr$+":"+comspeed$+","+"8192"+",INV" as #5
   else
-    open comportstr$+":"+comspeed$+","+"8192"+",get_serial_input" as #5
+    open comportstr$+":"+comspeed$+","+"8192" as #5
   end if
 end sub
 
@@ -939,7 +976,6 @@ sub get_serial_input 'collect the data from the serial port
           end select
           escape_flag% = 0
         end if
-
       end if
     end if
   end if
@@ -962,7 +998,8 @@ input "Enter Filename: "; receivefile$
       print chr$(13); chr$(10); "*** Download Cancelled ***"
       pause 1500
       welcomebanner
-      terminal
+      'terminal
+      exit sub
   else
     print "Please wait, downloading "; receivefile$
     print ""
@@ -980,7 +1017,8 @@ FileDialog(NameOfFile$())   ' no options so allow any file to be selected
     welcomebanner
     print chr$(13); chr$(10); "*** Upload Cancelled ***"
     pause 1500
-    terminal
+    'terminal
+    exit sub
   else
     cls
     print "Please wait, uploading "; NameOfFile$(0)
@@ -993,7 +1031,6 @@ sub listfiles
 cls
 FileDialog(NameOfFile$())   ' no options so allow any file to be selected
 welcomebanner
-terminal
 end sub
 
 
@@ -1039,8 +1076,10 @@ end sub
 
 sub comsettings
 local comwindow$
-  const ox = 20
-  const oy = 6
+local done% = 1
+const ox = 20
+const oy = 6
+do
   cls
   box ox*fwidth%, oy*fheight%, 60*fwidth%, 19*fheight%, 1,,rgb(black)
   print @((ox+2)*fwidth%,(oy+1)*fheight%) "COM PORT AND OTHER SETTINGS";
@@ -1063,34 +1102,34 @@ local comwindow$
 select case comwindow$
   case "" ' they hit enter
     print @(0,420) "Returning to terminal."
-    pause 1200 : welcomebanner : terminal
+    pause 1200 : welcomebanner : done% = 1
   case "a", "A"
     print chr$(10),chr$(13)
-    setcomport : pause 1200 : comsettings
+    setcomport : pause 1200 : done% = 0
   case "b", "B"
-    setcomspeed : pause 1200 : comsettings
+    setcomspeed : pause 1200 : done% = 0
   case "c", "C"
-    setcomtype : pause 1200 : comsettings
+    setcomtype : pause 1200 : done% = 0
   case "d", "D"
     print @(0,420) "Option not implemented yet."
-    pause 1500 : comsettings
+    pause 1500 : done% = 0
   case "e", "E"
     print @(0,420) "Option not implemented yet."
-    pause 1500 : comsettings
+    pause 1500 : done% = 0
   case "f", "F"
     print @(0,420) "Option not implemented yet."
-    pause 1500 : comsettings
+    pause 1500 : done% = 0
   case "g", "G"
     print @(0,420) "Option not implemented yet."
-    pause 1500 : comsettings
+    pause 1500 : done% = 0
   case "h", "H"
-    print chr$(10),chr$(13) : changelinefeeds : pause 1200 : comsettings
+    print chr$(10),chr$(13) : changelinefeeds : pause 1200 : done% = 0
   case "i", "I"
-    changeinitstring : pause 1200 : comsettings
+    changeinitstring : pause 1200 : done% = 0
   case "j", "J"
-    changeecho : pause 1200 : comsettings
+    changeecho : pause 1200 : done% = 0
   case "k", "K"
-    pickcolor : pause 1200 : comsettings
+    pickcolor : pause 1200 : done% = 0
   case "l", "L"
         if blinkingcursor$ = "Blinking On" then
           cls
@@ -1103,13 +1142,14 @@ select case comwindow$
           setupcolor : print "" : pause 1000
           blinkingcursor$ = "Blinking On" : cls
         end if
-    pause 1200 : comsettings
+    pause 1200 : done% = 0
   case "s", "S"
     print @(0,420) "Saving Configuration to settings.cfg"
-    saveconfig : pause 1500 : comsettings
+    saveconfig : pause 1500 : done% = 0
   case else
-    print @(0,420) "Invalid option. Try again." : pause 1500 : comsettings
+    print @(0,420) "Invalid option. Try again." : pause 1500 : done% = 0
 end select
+loop until done% = 1
 end sub
 
 
@@ -1135,14 +1175,14 @@ sub dialoghelp
   print @((ox+2)*fwidth%,(oy+15)*fheight%)"ALT-U Toggle Blinking Cursor";
   print @((ox+2)*fwidth%,(oy+16)*fheight%)"ALT-X Disconnect Session";
   print @((ox+2)*fwidth%,(oy+17)*fheight%)"";
-  print @((ox+2)*fwidth%,(oy+18)*fheight%)"Page UP = Upload File";
-  print @((ox+2)*fwidth%,(oy+19)*fheight%)"Page DOWN = Download File";
+  print @((ox+2)*fwidth%,(oy+18)*fheight%)"ALT+Page UP = Upload File";
+  print @((ox+2)*fwidth%,(oy+19)*fheight%)"ALT+Page DOWN = Download File";
   print @((ox+2)*fwidth%,(oy+20)*fheight%)"";
   print @((ox+2)*fwidth%,(oy+21)*fheight%)"ALT+WIN-D Toggle debug on/off";
   print @((ox+2)*fwidth%,(oy+22)*fheight%)"ALT+WIN-V Show Version info";
   do while inkey$ = "" : loop
 welcomebanner
-terminal
+'terminal
 end sub
 
 
@@ -1166,7 +1206,7 @@ sub credits
   print @((ox+2)*fwidth%,(oy+13)*fheight%)"Support email: recstudio@gmail.com";
   do while inkey$ = "" : loop
 welcomebanner
-terminal
+'terminal
 end sub
 
 
@@ -1174,8 +1214,11 @@ sub phonebook
 local newphoneentry$
 local newphoneusername$
 local newphonepassword$
-  const ox = 3
-  const oy = 3
+local done% = 1
+const ox = 3
+const oy = 3
+
+do
   cls
   box ox*fwidth%, oy*fheight%, 94*fwidth%, 20*fheight%, 1,,rgb(black)
   print @((ox+2)*fwidth%,(oy+1)*fheight%) "AUTODIAL PHONE BOOK";
@@ -1221,38 +1264,38 @@ local newphonepassword$
         print @(0,420)"Returning to terminal." 'print text below the box
         pause 1200
         welcomebanner
-        terminal
+        done% = 1
       case "c" 'clear an entry
         print @(0,420) ""
         input "Enter entry to clear: ", phoneentry%
           if phoneentry% < 1 then ' they hit enter or negative input
                 print "Clearing aborted."
                 pause 1500
-                phonebook
+                done% = 0
           end if
           if phoneentry% > 10 then
                 print "Clearing aborted."
                 pause 1500
-                phonebook
+                done% = 0
           end if
             print "Clearing entry"; phoneentry%
             phonebookentry$(phoneentry%) = ""
             phonebookusername$(phoneentry%) = ""
             phonebookpassword$(phoneentry%) = ""
             pause 1500
-            phonebook
+            done% = 0
       case "e" 'edit an entry
         print @(0,420) ""
         input "Enter entry to edit: ", phoneentry%
           if phoneentry% < 1 then
                 print "Not updated."
                 pause 1500
-                phonebook
+                done% = 0
           end if
           if phoneentry% > 10 then
                 print "Not updated."
                 pause 1500
-                phonebook
+                done% = 0
           end if
             print "Current hostname / phone number: ";phonebookentry$(phoneentry%)
             input "Enter new hostname / phone number: ", newphoneentry$
@@ -1260,7 +1303,7 @@ local newphonepassword$
                 print "Changing Entry";phoneentry%; " to "; newphoneentry$
                 phonebookentry$(phoneentry%) = newphoneentry$
                 pause 1500
-                phonebook
+                done% = 0
               end if
       case "d"
         print @(0,420) chr$(10),chr$(13)
@@ -1273,12 +1316,12 @@ local newphonepassword$
           if phoneentry% < 1 then
                 print "Not updated."
                 pause 1500
-                phonebook
+                done% = 0
           end if
           if phoneentry% > 10 then
                 print "Invalid entry."
                 pause 1500
-                phonebook
+                done% = 0
           end if
             print "Current Username: ";phonebookusername$(phoneentry%)
             print "Current Password: ";phonebookpassword$(phoneentry%)
@@ -1297,27 +1340,29 @@ local newphonepassword$
                 print "Changing Password ";phonebookpassword$(phoneentry%); " to "; newphonepassword$
                 phonebookpassword$(phoneentry%) = newphonepassword$
                 pause 1500
-                phonebook
+                done% = 0
               else
                 print "Not updated."
                 pause 1500
-                phonebook
+                done% = 0
               end if
           end if
       case "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"
         phoneentry% = val(dialchoice$)
         print @(0,420) "Dialing entry ";dialchoice$;", " phonebookentry$(phoneentry%)
-        print #5; "atd "; phonebookentry$(phoneentry%)"", chr$(13)
+        print #5; "atdt"; phonebookentry$(phoneentry%)"", chr$(13)
+        done% = 1
       case "s" 'save updated phone book to config file
         print @(0,420) "Phonebook Saved."
         savephonebook
         pause 1500
-        phonebook
+        done% = 0
       case else 'invalid junk
         print @(0,420)"Invalid selection."
         pause 1500
-        phonebook
+        done% = 0
       end select
+  loop until done% = 1
 end sub
 
 
