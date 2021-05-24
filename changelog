@@ -1,11 +1,17 @@
+v1.9.6:
+-ANSI Color support c/o Andrew Pamment.
+-CP437 Font added c/o Andrew Pamment.
+-bugfixes to Xmodem code and subroutine recursion.
+-Removal of serial RX interrupt routine for large speed increase.
+
 v1.9.5:
--start download (request remote start) without additional user intervention required
--xmodem processing loop/timer fix (was terminiating xmodem loop almost immediately)
--tons of bug fixes and remember more user settings in settings.cfg. Now Font choice, Line Feeds, Local Echo, and Blinking cursor state is saved. 
+-start download (request remote start) without additional user intervention required.
+-xmodem processing loop/timer fix (was terminiating xmodem loop almost immediately).
+-tons of bug fixes and remember more user settings in settings.cfg. Now Font choice, Line Feeds, Local Echo, and Blinking cursor state is saved.
 
 v1.9.4:
 -added recall/save of COM port settings to settings.cfg. Prompts only show at startup if settings.cfg is missing.
--removed unused variables
+-removed unused variables.
 
 v1.9.3:
 -initial commit of Dave's Xmodem software routines in anticipation of v2.0.
@@ -29,34 +35,34 @@ v1.9:
  TTL Serial, No Line Feed TX, and a long modem init string. If file is present then user values will be loaded.
 
 v1.8:
--RS-232 Port options in addition to TTL defaults
--COM 3 (USB Port) support
+-RS-232 Port options in addition to TTL defaults.
+-COM 3 (USB Port) support.
 -Fixed bug "Hitting Enter on font selection prompt reset color to White."
 
 v1.7:
 -added CRLF TX support. Default remains CR.
--ability to change COM port settings after program start
--fixed various informational messages
+-ability to change COM port settings after program start.
+-fixed various informational messages.
 
 v1.6:
--list files on the SD card
--ability to use firmware routines for upload & download
--upload file dialog using vegipete's getfile program
--COM port settings display window
+-list files on the SD card.
+-ability to use firmware routines for upload & download.
+-upload file dialog using vegipete's getfile program.
+-COM port settings display window.
 
 v1.5:
--ability change the font color
--clear screen command
--ALT commands for modem reset & initialize & hangup/disconnect
--true local echo support
+-ability change the font color.
+-clear screen command.
+-ALT commands for modem reset & initialize & hangup/disconnect.
+-true local echo support.
 
 v1.4:
--change the terminal exit key combination to ALT-Q
--informational status messages
--setting com port on startup
--changed graphical startup to text box
+-change the terminal exit key combination to ALT-Q.
+-informational status messages.
+-setting com port on startup.
+-changed graphical startup to text box.
 
 v1.3 and lower:
--help menu
--integrating code and ideas from esp8266lib, flashback terminal, and Rich Martin's sample code
--changed the name to Maxiterm
+-help menu.
+-integrating code and ideas from esp8266lib, flashback terminal, and Rich Martin's sample code.
+-changed the name to Maxiterm.
