@@ -73,13 +73,33 @@ dim numtime%, cycles%, underscore% 'for blinking cursor
 dim blinkingcursor$ = "Blinking Off" 'for turning blinking cursor on or off
 dim x%, y%, xoffset%, yoffset%
 dim transferdone% = 0 ' for ending transfers
+dim bold% = 0
+dim fg_colour1 = 172
+dim fg_colour2 = 172
+dim fg_colour3 = 172
+dim bg_colour1 = 0
+dim bg_colour2 = 0
+dim bg_colour3 = 0
+dim save_x% = 0
+dim save_y% = 0
+dim escape_flag% = 0
+
+dim params%(9)
+dim param_at% = 0
+dim vt320_at% = 0
+dim vt320%(15)
+
 gui cursor load "cursor.spr" 'cursor sprite for blinking cursor function
 gui cursor on 2,x%,y%
 gui cursor hide
+
+
 _xmodem_dim
 
 'main function
 cls
+load font "CP437(8x12).FNT"
+font #8
 introscreen 'show the title screen when launched
 pause 2500
 cls
@@ -114,15 +134,13 @@ do 'user input routine
   end if
 CHAR_OUT$ = INKEY$ 'typed input from terminal
 if CHAR_OUT$ <> "" then
-  if CHAR_OUT$ = chr$(137) then 'Page UP button
-    download
-  end if
-  if CHAR_OUT$ = chr$(136) then 'Page Down button
-    CHAR_OUT$ = "" : upload 'sending a CRLF first so buffer will be clear
-  end if
   feature$ = getchar$()'typing processed by getchar routine to watch for modifier keys
     if altflag% = 1 then 'check for ALT being asserted
       select case feature$ 'turn all characters to lowercase
+      case chr$(137) 'Page UP button
+        download
+      case chr$(136) 'Page Down button
+        CHAR_OUT$ = "" : upload 'sending a CRLF first so buffer will be clear
       case "a" 'show the autodial phone book screen
         gui cursor hide : phonebook 
           if blinkingcursor$ = "Blinking On" then
@@ -242,11 +260,38 @@ if CHAR_OUT$ <> "" then
         echosetting$ = "Echo Off" : hangup
     end select
   else
-print #5, CHAR_OUT$;
-      if linefeedstate$ = "LF On" and CHAR_OUT$ = chr$(13) then
-        print #5, ""
-      end if
-end if
+      select case asc(CHAR_OUT$)
+        case 128
+          'up
+          print #5, CHR$(27) + "[A";
+        case 129
+          'down
+          print #5, CHR$(27) + "[B";
+        case 130
+          'left
+          print #5, CHR$(27) + "[D";
+        case 131
+          'right
+          print #5, CHR$(27) + "[C";
+        case 136
+          'page up
+          print #5, CHR$(27) + "[V";
+        case 137
+          'page down
+          print #5, CHR$(27) + "[U";
+        case 134
+          'home
+          print #5, CHR$(27) + "[H";
+        case 135
+          'end
+          print #5, CHR$(27) + "[K";
+        case else
+          print #5, CHAR_OUT$;
+          if linefeedstate$ = "LF On" and CHAR_OUT$ = chr$(13) then
+            print #5, ""
+          end if
+       end select
+  end if
   if echosetting$ = "Echo On" and CHAR_OUT$ <> "" then
       print CHAR_OUT$;
       if CHAR_OUT$ = chr$(13) then 'workaround for mmbasic bug
@@ -271,6 +316,7 @@ end if
   else
     gui cursor hide
   end if
+  get_serial_input()
 loop
 end sub
 
@@ -399,28 +445,39 @@ end sub
 
 sub pickcolor 'pick your desired font color
 local textchoice$
+local done%
+setupcolor
 print ""
 print ""
+do
 input "Which color do you want 1.White [DEFAULT], 2.Amber, or 3.Green "; textchoice$
 select case textchoice$
   case "","1" ' hitting enter or 1
     text_color = 1 : text_colorstr$ = "White" : setupcolor
     print "White Selected."
+    done% = 1
   case "2"
     text_color = 2 : text_colorstr$ = "Amber" : setupcolor
     print "Amber Selected."
+    done% = 1
   case "3"
     text_color = 3 : text_colorstr$ = "Green" : setupcolor
     print "Green Selected."
+    done% = 1
   case else
     print "Invalid Selection, please try again."
-    pickcolor
+    done% = 0
 end select
+loop until done% = 1
+restorecolor
 end sub
 
 
 sub changelinefeeds 'choose if you want a LF after your CR's
 local lfchoice$
+local done% = 1
+setupcolor
+do
 print ""
 print "Send Line Feeds after Carriage Return?"
 print "1.No [DEFAULT]"
@@ -429,19 +486,25 @@ input "Make Selection;"; lfchoice$
 select case lfchoice$
   case "", "1" ' hitting enter or 1
     linefeedstate$ = "LF Off" : print "Line Feeds will not be sent."
+    done% = 1
   case "2"
     linefeedstate$ = "LF On" :  print "Line Feeds will be sent."
+    done% = 1
   case else
     print "Invalid Selection, please try again."
-    pause 1200
-    changelinefeeds
+    done% = 0
 end select
 pause 1200
+loop until done% = 1
+restorecolor
 end sub
 
 
 sub changeecho 'set local echo. NOT ECHO THRU MODEM
 local echochoice$
+local done% = 1
+setupcolor
+do
 print @(0,420)""
 print "Turn on Local Echo?"
 print "1.No [DEFAULT]"
@@ -450,42 +513,56 @@ input "Make Selection;"; echochoice$
 select case echochoice$
   case "", "1" ' hitting enter or 1
     echosetting$ = "Echo Off" : print "Local Echo is Off."
+    done% = 1
   case "2"
     echosetting$ = "Echo On"  : print "Local Echo is On."
+    done% = 1
   case else
     print "Invalid Selection, please try again."
-    pause 1200
-    changeecho
+    done% = 0
 end select
 pause 1200
+loop until done% = 1
+restorecolor
 end sub
 
 
 sub setcomport 'COM port selection
+local done% = 1
+setupcolor
+do
 print ""
 input "Choose COM Port, COM 1 [DEFAULT], 2, or 3 "; comchoice$
 select case comchoice$
   case "", "1" 'hitting enter or 1
     comportstr$ = "COM1" :  print "COM1 Selected."
+    done% = 1
   case "2"
     comportstr$ = "COM2" : print "COM2 Selected."
+    done% = 1
   case "3"
     comportstr$ = "COM3" : print "COM3 (via USB Type B port) Selected."
-        if mm.errno <> 0 then
-        Print "Error: ";mm.errmsg$,
-      end if
+    if mm.errno <> 0 then
+      Print "Error: ";mm.errmsg$,
+    end if
+    done% = 1
   case else
-      print "Invalid COM port, please try again."
-      pause 1200 ' wait for them to read the response
-      setcomport ' start over
+    print "Invalid COM port, please try again."
+    pause 1200 ' wait for them to read the response
+    done% = 0 ' start over
 end select
+loop until done% = 1
+restorecolor
 startcomport
 end sub
 
 
 sub setcomtype 'choosing RS-232 inverts the logic levels only, not the voltages.
+setupcolor
 local comtype$
+local done% = 1
 onlineflag% = 0 'disable so incoming data doesn't disturb our decision
+do
 print ""
 print ""
 print "Select COM Port Type"
@@ -496,21 +573,28 @@ select case comtype$
   case "", "1" 'hitting enter or 1
     comporttype$ = "TTL Serial" 'this string is important for the settings.cfg file!
     print "TTL Serial Selected."
+    done% = 1
   case "2"
     comporttype$ = "RS-232 Serial"
     print "RS-232 Serial Selected."
+    done% = 1
   case else
     print "Invalid selection, please try again."
     pause 1200
-    setcomtype
+    done% = 0
 end select
+loop until done% = 1
 startcomport
+restorecolor
 onlineflag% = 1 'annnd we're back
 end sub
 
 
 sub setcomspeed
+setupcolor
 onlineflag% = 0 'disable so incoming data doesn't disturb our decision
+local done% = 1
+do
 print ""
 print ""
 print "Select COM Port Speed"
@@ -526,36 +610,46 @@ input "Make Selection: ", comspeedchoice$
   select case comspeedchoice$
     case "", "8" ' the default choice is fastest
       print "115200 Selected." : comspeed$ = "115200"
+      done% = 1
     case "1"
       print "1200 Selected." : comspeed$ = "1200"
+      done% = 1
     case "2"
       print "2400 Selected." : comspeed$ = "2400"
+      done% = 1
     case "3"
       print "4800 Selected." : comspeed$ = "4800"
+      done% = 1
     case "4"
       print "9600 Selected." : comspeed$ = "9600"
+      done% = 1
     case "5"
       print "19200 Selected." : comspeed$ = "19200"
+      done% = 1
     case "6"
       print "38400 Selected." : comspeed$ = "38400"
+      done% = 1
     case "7"
       print "57600 Selected." : comspeed$ = "57600"
+      done% = 1
     case else
       print "Invalid selection. Please try again."
       pause 1200
-      setcomspeed
+      done% = 0
   end select
+loop until done% = 1
 onlineflag% = 1 'enable so we're back online
 startcomport
+restorecolor
 end sub
 
 
 sub setupcolor ' translate our font choice into RGB values
 select case TEXT_COLOR
   case 1
-TERM_COLOR1 = 255
-TERM_COLOR2 = 255
-TERM_COLOR3 = 255
+TERM_COLOR1 = 170
+TERM_COLOR2 = 170
+TERM_COLOR3 = 170
   case 2
 TERM_COLOR1 = 255
 TERM_COLOR2 = 176
@@ -565,18 +659,21 @@ TERM_COLOR1 = 51
 TERM_COLOR2 = 255
 TERM_COLOR3 = 0
 end select
-colour rgb(TERM_COLOR1,TERM_COLOR2,TERM_COLOR3), rgb(black)
+colour rgb(TERM_COLOR1, TERM_COLOR2, TERM_COLOR3), rgb(black)
 end sub
 
+sub restorecolor
+    colour rgb(fg_colour1, fg_colour2, fg_colour3), rgb(bg_colour1, bg_colour2, bg_colour3)
+end sub
 
 sub startcomport 'start the physical COM port
 ON ERROR SKIP 'needed because if the port is already open for next command, we'll crash
 close #5
 ON ERROR ABORT 'back to normal
   if comporttype$ = "RS-232 Serial" then
-    open comportstr$+":"+comspeed$+","+"8192"+",get_serial_input"+",INV" as #5
+    open comportstr$+":"+comspeed$+",8192,INV" as #5
   else
-    open comportstr$+":"+comspeed$+","+"8192"+",get_serial_input" as #5
+    open comportstr$+":"+comspeed$+",8192" as #5
   end if
 end sub
 
@@ -599,21 +696,366 @@ end sub
 
 
 sub get_serial_input 'collect the data from the serial port
-  if xmodem_up$<>"" or xmodem_down$<>"" then
-    CHARS_IN$ = input$(1,#5) ' only one char at a time
-    if CHARS_IN$ <> "" then
-      _xmodem_handler CHARS_IN$
-    end if
-  else
-    CHARS_IN$ = input$(LOC(#5),#5)
-    if onlineflag% = 1 then
-      print CHARS_IN$;
-        if soundflag% = 1 AND CHARS_IN$ = chr$(13) then
-          ON ERROR IGNORE
-          PLAY mp3 "sound.mp3"
-          On ERROR ABORT
+  local i%
+  local d%
+  local cursor_x%
+  local cursor_y%
+  local MCHARS_IN%(8192)
+  local l%
+
+  if LOC(#5) then
+    l% = LOC(#5)    
+
+    longstring clear MCHARS_IN%()
+
+    do while l% > 0 
+      if l% > 255 then
+        longstring append MCHARS_IN%(), input$(255, #5)
+        l% = l% - 255
+      else
+        longstring append MCHARS_IN%(), input$(l%, #5)
+        l% = 0
+      endif
+      
+    loop
+
+    for d% = 1 to LLEN(MCHARS_IN%())
+
+      CHARS_IN$ = LGETSTR$(MCHARS_IN%(), d%, 1)
+
+        if onlineflag% = 1 then
+          if CHARS_IN$ <> "" then
+            if escape_flag% = 0 then
+              if CHARS_IN$ = CHR$(27) then
+                escape_flag% = 1
+              else
+                print CHARS_IN$;
+                if soundflag% = 1 AND CHARS_IN$ = chr$(13) then
+                  ON ERROR IGNORE
+                  PLAY mp3 "sound.mp3"
+                  On ERROR ABORT
+                end if
+              end if
+            elseif escape_flag% = 1 then
+              if CHARS_IN$ = "[" then
+                escape_flag% = 2
+                for i% = 0 to 9
+                  params%(i%) = 0
+                next i%
+                param_at% = 0
+              else
+                escape_flag% = 0
+              end if
+            elseif escape_flag% = 2 then
+              if CHARS_IN$ = ";" then
+                if param_at% < 10 then
+                    param_at% = param_at% + 1
+                end if
+              else if asc(CHARS_IN$) >= 48 and asc(CHARS_IN$) <= 57 then
+                if param_at% = 0 then
+                  param_at% = 1
+                end if
+
+                params%(param_at% - 1) = params%(param_at% - 1) * 10 + (ASC(CHARS_IN$) - ASC("0"))
+              else
+                escape_flag% = 3
+              end if
+            end if
+
+            if escape_flag% = 3 then
+              select case CHARS_IN$
+                case "m"
+                  for i% = 1 to param_at%
+                    select case params%(i% - 1)
+                      case 0
+                        bold% = 0
+                        fg_colour1 = 170
+                        fg_colour2 = 170
+                        fg_colour3 = 170
+                        bg_colour1 = 0
+                        bg_colour2 = 0
+                        bg_colour3 = 0
+                      case 1
+                        bold% = 1
+                        if fg_colour1 = 0 then
+                          fg_colour1 = 85
+                        else if fg_colour1 = 170 then
+                          fg_colour1 = 255
+                        end if
+                        if fg_colour2 = 0 then
+                          fg_colour2 = 85
+                        else if fg_colour2 = 170 then
+                          fg_colour2 = 255
+                        end if
+                        if fg_colour3 = 0 then
+                          fg_colour3 = 85
+                        else if fg_colour3 = 170 then
+                          fg_colour3 = 255
+                        end if
+                      case 30
+                        if bold% = 1 then
+                          fg_colour1 = 85
+                          fg_colour2 = 85
+                          fg_colour3 = 85
+                        else
+                          fg_colour1 = 0
+                          fg_colour2 = 0
+                          fg_colour3 = 0
+                        end if
+                      case 31
+                        if bold% = 1 then
+                          fg_colour1 = 255
+                          fg_colour2 = 85
+                          fg_colour3 = 85
+                        else
+                          fg_colour1 = 170
+                          fg_colour2 = 0
+                          fg_colour3 = 0
+                        end if
+                      case 32
+                        if bold% = 1 then
+                          fg_colour1 = 85
+                          fg_colour2 = 255
+                          fg_colour3 = 85
+                        else
+                          fg_colour1 = 0
+                          fg_colour2 = 170
+                          fg_colour3 = 0
+                        end if
+                      case 33
+                        if bold% = 1 then
+                          fg_colour1 = 255
+                          fg_colour2 = 255
+                          fg_colour3 = 85
+                        else
+                          fg_colour1 = 170
+                          fg_colour2 = 85
+                          fg_colour3 = 0
+                        end if
+                      case 34
+                        if bold% = 1 then
+                          fg_colour1 = 85
+                          fg_colour2 = 85
+                          fg_colour3 = 255
+                        else
+                          fg_colour1 = 0
+                          fg_colour2 = 0
+                          fg_colour3 = 170
+                        end if
+                      case 35
+                        if bold% = 1 then
+                          fg_colour1 = 255
+                          fg_colour2 = 85
+                          fg_colour3 = 255
+                        else
+                          fg_colour1 = 170
+                          fg_colour2 = 0
+                          fg_colour3 = 170
+                        end if
+                      case 36
+                        if bold% = 1 then
+                          fg_colour1 = 85
+                          fg_colour2 = 255
+                          fg_colour3 = 255
+                        else
+                          fg_colour1 = 0
+                          fg_colour2 = 170
+                          fg_colour3 = 170
+                        end if
+                      case 37
+                        if bold% = 1 then
+                          fg_colour1 = 255
+                          fg_colour2 = 255
+                          fg_colour3 = 255
+                        else
+                          fg_colour1 = 170
+                          fg_colour2 = 170
+                          fg_colour3 = 170
+                        end if
+                      case 40
+                        bg_colour1 = 0
+                        bg_colour2 = 0
+                        bg_colour3 = 0
+                      case 41
+                        bg_colour1 = 170
+                        bg_colour2 = 0
+                        bg_colour3 = 0
+                      case 42
+                        bg_colour1 = 0
+                        bg_colour2 = 170
+                        bg_colour3 = 0
+                      case 43
+                        bg_colour1 = 170
+                        bg_colour2 = 85
+                        bg_colour3 = 0
+                      case 44
+                        bg_colour1 = 0
+                        bg_colour2 = 0
+                        bg_colour3 = 170
+                      case 45
+                        bg_colour1 = 170
+                        bg_colour2 = 0
+                        bg_colour3 = 170
+                      case 46
+                        bg_colour1 = 0
+                        bg_colour2 = 170
+                        bg_colour3 = 170
+                      case 47
+                        bg_colour1 = 170
+                        bg_colour2 = 170
+                        bg_colour3 = 170
+                    end select
+                  next i%
+                  colour RGB(fg_colour1, fg_colour2, fg_colour3), RGB(bg_colour1, bg_colour2, bg_colour3)
+                  escape_flag% = 0
+                case "H","f"
+                  if params%(1) > 0 then
+                    params%(1) = params%(1) - 1
+                  end if
+
+                  if params%(0) > 0 then
+                    params%(0) = params%(0) - 1
+                  end if
+
+                  cursor_x% = params%(1)
+                  cursor_y% = params%(0)
+
+                  if cursor_x% < 0 then
+                    cursor_x% = 0
+                  elseif cursor_x% > MM.HRES / fwidth% - 1 then
+                    cursor_x% = MM.HRES / fwidth% - 1
+                  end if
+
+                  if cursor_y% < 0 then
+                    cursor_y% = 0
+                  elseif cursor_y% > MM.VRES / fheight% - 1 then
+                    cursor_y% = MM.VRES / fheight% - 1
+                  end if
+
+                  print @(fwidth% * cursor_x%, fheight% * cursor_y%) "";
+                  escape_flag% = 0
+                case "A"
+                  if param_at% > 0 then
+                    cursor_y% = MM.INFO(VPOS) - fheight% * params%(0)
+                  else
+                    cursor_y% = MM.INFO(VPOS) - fheight%
+                  end if
+                  if cursor_y% >= 0 then
+                    print @(MM.INFO(HPOS), cursor_y%) "";
+                  else
+                    print @(MM.INFO(HPOS), 0) "";
+                  end if
+                  escape_flag% = 0
+                case "B"
+                  if param_at% > 0 then
+                    cursor_y% = MM.INFO(VPOS) + fheight% * params%(0)
+                  else
+                    cursor_y% = MM.INFO(VPOS) + fheight%
+                  end if
+                  if cursor_y% <= MM.VRES - fheight% then
+                    print @(MM.INFO(HPOS), cursor_y%) "";
+                  else
+                    print @(MM.INFO(HPOS), MM.VRES - fheight%) "";
+                  end if
+                  escape_flag% = 0
+                case "C"
+                  if param_at% > 0 then
+                    cursor_x% = MM.INFO(HPOS) + fwidth% * params%(0)
+                  else
+                    cursor_x% = MM.INFO(HPOS) + fwidth%
+                  end if
+                  if cursor_x% <= MM.HRES - fwidth% then
+                    print @(cursor_x%, MM.INFO(VPOS)) "";
+                  else
+                    print @(MM.HRES - fwidth%, MM.INFO(VPOS)) "";
+                  end if
+                  escape_flag% = 0
+                case "D"
+                  if param_at% > 0 then
+                    cursor_x% = MM.INFO(HPOS) - fwidth% * params%(0)
+                  else
+                    cursor_x% = MM.INFO(HPOS) - fwidth%
+                  end if
+                  if cursor_x% >= 0 then
+                    print @(cursor_x%, MM.INFO(VPOS)) "";
+                  else
+                    print @(0, MM.INFO(VPOS)) "";
+                  end if
+                  escape_flag% = 0
+                case "s"
+                  save_x% = MM.INFO(HPOS)
+                  save_y% = MM.INFO(VPOS)
+                  escape_flag% = 0
+                case "u"
+                  print @(save_x%, save_y%) "";
+                  escape_flag% = 0
+                case "J"
+                  if param_at% = 0 then
+                    box 0, MM.INFO(VPOS), MM.HRES, MM.VRES,0, , rgb(bg_colour1, bg_colour2, bg_colour3)
+                    print @(0, 0) "";
+                  else
+                    if params%(0) = 1 then
+                      box 0, 0, MM.HRES, MM.INFO(VPOS) - fheight%,0,, rgb(bg_colour1, bg_colour2, bg_colour3)
+                    else if params%(0) = 2 then
+                      box 0, 0, MM.HRES, MM.VRES,0, , rgb(bg_colour1, bg_colour2, bg_colour3)
+                    end if
+                  end if
+                  escape_flag% = 0
+                case "K"
+                  if params%(0) = 0 then
+                    box MM.INFO(HPOS), MM.INFO(VPOS), MM.HRES - MM.INFO(HPOS), fheight%,0, , rgb(bg_colour1, bg_colour2, bg_colour3)
+                  else
+                    if params%(0) = 1 then
+                      box 0, MM.INFO(VPOS), MM.INFO(HPOS), fheight%,0, , rgb(bg_colour1, bg_colour2, bg_colour3)
+                    else if params%(0) = 2 then
+                      box 0, MM.INFO(VPOS), MM.HRES, fheight%,0, , rgb(bg_colour1, bg_colour2, bg_colour3)
+                    end if
+                  end if
+                  escape_flag% = 0
+                case "n"
+                  if params%(0) = 6 then 'report cursor position
+                    print #5, CHR$(27) + "[" + STR$(MM.INFO(VPOS) / fheight% + 1) + ";" + STR$(MM.INFO(HPOS) / fwidth% + 1) + "R"
+                  end if
+                  escape_flag% = 0
+
+                case "?"
+                    ' vt320 code
+                    for i% = 0 to 15
+                        vt320%(i%) = 0
+                    next i%
+                    vt320_at% = 0
+                    escape_flag% = 5
+                case " "
+                  escape_flag% = 7
+                case "*"
+                  escape_flag% = 8
+              end select
+            else if escape_flag% = 5 then
+              if CHARS_IN$ = ";" then
+                if vt320_at% < 15 then
+                    vt320_at% = vt320_at% + 1
+                end if
+              else if asc(CHARS_IN$) >= 48 and asc(CHARS_IN$) <= 57 then
+                if vt320_at% = 0 then
+                  vt320_at% = 1
+                end if
+
+                vt320%(vt320_at% - 1) = vt320%(vt320_at% - 1) * 10 + (ASC(CHARS_IN$) - ASC("0"))
+              else
+                escape_flag% = 6
+              end if
+            else if escape_flag% = 7 then
+              escape_flag% = 0
+            else if escape_flag% = 8 then
+              escape_flag% = 0
+            end if
+
+            if escape_flag% = 6 then
+              escape_flag% = 0
+            end if
+          end if
         end if
-    end if
+    next d%
   end if
 end sub
 
@@ -634,7 +1076,8 @@ input "Enter Filename: "; receivefile$
       print chr$(13); chr$(10); "*** Download Cancelled ***"
       pause 1500
       welcomebanner
-      terminal
+      'terminal
+      exit sub
   else
     print "Please wait, downloading "; receivefile$
     print ""
@@ -652,7 +1095,7 @@ FileDialog(NameOfFile$())   ' no options so allow any file to be selected
     welcomebanner
     print chr$(13); chr$(10); "*** Upload Cancelled ***"
     pause 1500
-    terminal
+    exit sub
   else
     cls
     print "Please wait, uploading "; NameOfFile$(0)
@@ -662,10 +1105,11 @@ end sub
 
 
 sub listfiles
+setupcolor
 cls
 FileDialog(NameOfFile$())   ' no options so allow any file to be selected
 welcomebanner
-terminal
+restorecolor
 end sub
 
 
@@ -711,8 +1155,11 @@ end sub
 
 sub comsettings
 local comwindow$
-  const ox = 20
-  const oy = 6
+local done% = 1
+const ox = 20
+const oy = 6
+setupcolor
+do
   cls
   box ox*fwidth%, oy*fheight%, 60*fwidth%, 19*fheight%, 1,,rgb(black)
   print @((ox+2)*fwidth%,(oy+1)*fheight%) "COM PORT AND OTHER SETTINGS";
@@ -735,34 +1182,34 @@ local comwindow$
 select case comwindow$
   case "" ' they hit enter
     print @(0,420) "Returning to terminal."
-    pause 1200 : welcomebanner : terminal
+    pause 1200 : welcomebanner : done% = 1
   case "a", "A"
     print chr$(10),chr$(13)
-    setcomport : pause 1200 : comsettings
+    setcomport : pause 1200 : done% = 0
   case "b", "B"
-    setcomspeed : pause 1200 : comsettings
+    setcomspeed : pause 1200 : done% = 0
   case "c", "C"
-    setcomtype : pause 1200 : comsettings
+    setcomtype : pause 1200 : done% = 0
   case "d", "D"
     print @(0,420) "Option not implemented yet."
-    pause 1500 : comsettings
+    pause 1500 : done% = 0
   case "e", "E"
     print @(0,420) "Option not implemented yet."
-    pause 1500 : comsettings
+    pause 1500 : done% = 0
   case "f", "F"
     print @(0,420) "Option not implemented yet."
-    pause 1500 : comsettings
+    pause 1500 : done% = 0
   case "g", "G"
     print @(0,420) "Option not implemented yet."
-    pause 1500 : comsettings
+    pause 1500 : done% = 0
   case "h", "H"
-    print chr$(10),chr$(13) : changelinefeeds : pause 1200 : comsettings
+    print chr$(10),chr$(13) : changelinefeeds : pause 1200 : done% = 0
   case "i", "I"
-    changeinitstring : pause 1200 : comsettings
+    changeinitstring : pause 1200 : done% = 0
   case "j", "J"
-    changeecho : pause 1200 : comsettings
+    changeecho : pause 1200 : done% = 0
   case "k", "K"
-    pickcolor : pause 1200 : comsettings
+    pickcolor : pause 1200 : done% = 0
   case "l", "L"
         if blinkingcursor$ = "Blinking On" then
           cls
@@ -775,19 +1222,22 @@ select case comwindow$
           setupcolor : print "" : pause 1000
           blinkingcursor$ = "Blinking On" : cls
         end if
-    pause 1200 : comsettings
+    pause 1200 : done% = 0
   case "s", "S"
     print @(0,420) "Saving Configuration to settings.cfg"
-    saveconfig : pause 1500 : comsettings
+    saveconfig : pause 1500 : done% = 0
   case else
-    print @(0,420) "Invalid option. Try again." : pause 1500 : comsettings
+    print @(0,420) "Invalid option. Try again." : pause 1500 : done% = 0
 end select
+loop until done% = 1
+restorecolor
 end sub
 
 
 sub dialoghelp
   const ox = 30
   const oy = 15
+  setupcolor
   cls
   box ox*fwidth%, oy*fheight%, 40*fwidth%, 24*fheight%, 1,,rgb(black)
   print @((ox+2)*fwidth%,(oy+1)*fheight%) "ALT-A Autodial Phone Book";
@@ -807,20 +1257,22 @@ sub dialoghelp
   print @((ox+2)*fwidth%,(oy+15)*fheight%)"ALT-U Toggle Blinking Cursor";
   print @((ox+2)*fwidth%,(oy+16)*fheight%)"ALT-X Disconnect Session";
   print @((ox+2)*fwidth%,(oy+17)*fheight%)"";
-  print @((ox+2)*fwidth%,(oy+18)*fheight%)"Page UP = Upload File";
-  print @((ox+2)*fwidth%,(oy+19)*fheight%)"Page DOWN = Download File";
+  print @((ox+2)*fwidth%,(oy+18)*fheight%)"ALT+Page UP = Upload File";
+  print @((ox+2)*fwidth%,(oy+19)*fheight%)"ALT+Page DOWN = Download File";
   print @((ox+2)*fwidth%,(oy+20)*fheight%)"";
   print @((ox+2)*fwidth%,(oy+21)*fheight%)"ALT+WIN-D Toggle debug on/off";
   print @((ox+2)*fwidth%,(oy+22)*fheight%)"ALT+WIN-V Show Version info";
   do while inkey$ = "" : loop
-welcomebanner
-terminal
+  welcomebanner
+  restorecolor
+'terminal
 end sub
 
 
 sub credits
   const ox = 30
   const oy = 15
+  setupcolor
   cls
   box ox*fwidth%, oy*fheight%, 40*fwidth%, 15*fheight%, 1,,rgb(black)
   print @((ox+2)*fwidth%,(oy+1)*fheight%) "Maxiterm for the Color Maximite 2";
@@ -837,8 +1289,10 @@ sub credits
   print @((ox+2)*fwidth%,(oy+12)*fheight%)"";
   print @((ox+2)*fwidth%,(oy+13)*fheight%)"Support email: recstudio@gmail.com";
   do while inkey$ = "" : loop
-welcomebanner
-terminal
+
+  welcomebanner
+  restorecolor
+'terminal
 end sub
 
 
@@ -846,8 +1300,12 @@ sub phonebook
 local newphoneentry$
 local newphoneusername$
 local newphonepassword$
-  const ox = 3
-  const oy = 3
+local done% = 1
+const ox = 3
+const oy = 3
+
+do
+  setupcolor
   cls
   box ox*fwidth%, oy*fheight%, 94*fwidth%, 20*fheight%, 1,,rgb(black)
   print @((ox+2)*fwidth%,(oy+1)*fheight%) "AUTODIAL PHONE BOOK";
@@ -893,38 +1351,38 @@ local newphonepassword$
         print @(0,420)"Returning to terminal." 'print text below the box
         pause 1200
         welcomebanner
-        terminal
+        done% = 1
       case "c" 'clear an entry
         print @(0,420) ""
         input "Enter entry to clear: ", phoneentry%
           if phoneentry% < 1 then ' they hit enter or negative input
                 print "Clearing aborted."
                 pause 1500
-                phonebook
+                done% = 0
           end if
           if phoneentry% > 10 then
                 print "Clearing aborted."
                 pause 1500
-                phonebook
+                done% = 0
           end if
             print "Clearing entry"; phoneentry%
             phonebookentry$(phoneentry%) = ""
             phonebookusername$(phoneentry%) = ""
             phonebookpassword$(phoneentry%) = ""
             pause 1500
-            phonebook
+            done% = 0
       case "e" 'edit an entry
         print @(0,420) ""
         input "Enter entry to edit: ", phoneentry%
           if phoneentry% < 1 then
                 print "Not updated."
                 pause 1500
-                phonebook
+                done% = 0
           end if
           if phoneentry% > 10 then
                 print "Not updated."
                 pause 1500
-                phonebook
+                done% = 0
           end if
             print "Current hostname / phone number: ";phonebookentry$(phoneentry%)
             input "Enter new hostname / phone number: ", newphoneentry$
@@ -932,25 +1390,26 @@ local newphonepassword$
                 print "Changing Entry";phoneentry%; " to "; newphoneentry$
                 phonebookentry$(phoneentry%) = newphoneentry$
                 pause 1500
-                phonebook
+                done% = 0
               end if
       case "d"
         print @(0,420) chr$(10),chr$(13)
         input "Entry # to dial: ", phoneentry%
         print "Dialing entry";phoneentry%;", " phonebookentry$(phoneentry%)
-        print #5; "atdt"; phonebookentry$(phoneentry%)"", chr$(13)
+        print #5; "atdt "; phonebookentry$(phoneentry%)"", chr$(13)
+        exit sub
       case "l" 'edit the login for an entry
         print @(0,420) ""
         input "Enter entry to edit: ", phoneentry%
           if phoneentry% < 1 then
                 print "Not updated."
                 pause 1500
-                phonebook
+                done% = 0
           end if
           if phoneentry% > 10 then
                 print "Invalid entry."
                 pause 1500
-                phonebook
+                done% = 0
           end if
             print "Current Username: ";phonebookusername$(phoneentry%)
             print "Current Password: ";phonebookpassword$(phoneentry%)
@@ -969,27 +1428,30 @@ local newphonepassword$
                 print "Changing Password ";phonebookpassword$(phoneentry%); " to "; newphonepassword$
                 phonebookpassword$(phoneentry%) = newphonepassword$
                 pause 1500
-                phonebook
+                done% = 0
               else
                 print "Not updated."
                 pause 1500
-                phonebook
+                done% = 0
               end if
           end if
       case "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"
         phoneentry% = val(dialchoice$)
         print @(0,420) "Dialing entry ";dialchoice$;", " phonebookentry$(phoneentry%)
-        print #5; "atd "; phonebookentry$(phoneentry%)"", chr$(13)
+        print #5; "atdt "; phonebookentry$(phoneentry%)"", chr$(13)
+        exit sub
       case "s" 'save updated phone book to config file
         print @(0,420) "Phonebook Saved."
         savephonebook
         pause 1500
-        phonebook
+        done% = 0
       case else 'invalid junk
         print @(0,420)"Invalid selection."
         pause 1500
-        phonebook
+        done% = 0
       end select
+  loop until done% = 1
+  restorecolor
 end sub
 
 
@@ -1362,7 +1824,10 @@ end sub '_xmodem_dim_const
 
 sub _xmodem_terminal
   option crlf lf
-
+  local char_in$
+  local MCHARS_IN%(8192)
+  local d%
+  local l%
   if len(xmodem_down$)>0 then
     print "^X to cancel transmission"
     print #5,nak$; ' start download immediately
@@ -1371,12 +1836,40 @@ sub _xmodem_terminal
   xmodem_last_recv = timer
   local key$
   do ' terminal - send pressed keys, send [nak] on timeout
+    l% = LOC(#5)    
+
+    longstring clear MCHARS_IN%()
+
+    do while l% > 0 
+      if l% > 255 then
+        longstring append MCHARS_IN%(), input$(255, #5)
+        l% = l% - 255
+      else
+        longstring append MCHARS_IN%(), input$(l%, #5)
+        l% = 0
+      endif
+      
+    loop
+
+    for d% = 1 to LLEN(MCHARS_IN%())
+      key$ = inkey$
+      if key$ = can$ then
+        print #5;key$;
+        _xmodem_timer_handler key$
+      end if
+      _xmodem_timer_handler ""
+
+      char_in$ = LGETSTR$(MCHARS_IN%(), d%, 1)
+      _xmodem_handler(char_in$)
+    next d%
+
     key$ = inkey$
-    if len(key$) > 0 then
+    if key$ = can$ then
       print #5;key$;
       _xmodem_timer_handler key$
     end if
     _xmodem_timer_handler ""
+
   loop while xmodem_up$<>"" OR xmodem_down$<>""
 
   option crlf crlf
@@ -1511,7 +2004,7 @@ sub _xmodem_handler serial$
       end if
     case 3: ' receiving block, waiting for complete block including checksum
       if len(xmodem_buffer$) < 128 then
-         xmodem_buffer$=xmodem_buffer$+serial$
+         cat xmodem_buffer$, serial$
          xmodem_sum%=(xmodem_sum%+asc(serial$)) and 255
          'print "<";len(xmodem_buffer$);":";asc(serial$)">";
          if len(xmodem_buffer$) = 128 then
