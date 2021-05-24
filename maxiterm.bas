@@ -3,7 +3,7 @@
 'Also code from vegipete for the GetFile routine
 'Also code from davervw for Xmodem 07 Mar 2021
 'Also code from Andrew Pamment 24 May 2021
-'Version 1.9.5 John Crutti Jr 4-12-2021
+'Version 1.9.6 John Crutti Jr 5-24-2021
 
 OPTION EXPLICIT
 ON ERROR ABORT
