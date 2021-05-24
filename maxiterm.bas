@@ -433,7 +433,7 @@ sub introscreen 'opening intro
   print @((ox+2)*fwidth%,(oy+7)*fheight%) "       Version 1.9.6";
   print @((ox+2)*fwidth%,(oy+8)*fheight%) "           by";
   print @((ox+2)*fwidth%,(oy+9)*fheight%) "       Jay Crutti";
-  print @((ox+2)*fwidth%,(oy+10)*fheight%)"        and friends";
+  print @((ox+2)*fwidth%,(oy+10)*fheight%)"       and friends";
   print @((ox+2)*fwidth%,(oy+11)*fheight%)"          2021  ";
   print @((ox+2)*fwidth%,(oy+12)*fheight%)"    www.jaycrutti.com";
 end sub
