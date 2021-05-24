@@ -1,6 +1,5 @@
 Planned features:
 Software Routines for Xmodem-Ymodem-Zmodem File Transfer support, transfer progress windows
-ANSI color support
 RS-232 options other than 8-N-1, Flow Control (RTS/CTS & Xon/Xoff) support
 Ability to change sound of keypress sound mode
 Saving/Recall of ALL configuration parameters (queued for v2)
@@ -8,7 +7,6 @@ Correct operation of Backspace erasing the existing text
 Optional concurrent output to log file
 More fully featured ALT-D / Drive operations
 Color intro title card screen
-Different font/type options
 Archiving/Unarchiving for file transfers from within the program
 
 Bugs:
