@@ -2,6 +2,7 @@
 'Also code from Flashback.bas 1.0.0 by Rich Martin (datawiz)
 'Also code from vegipete for the GetFile routine
 'Also code from davervw for Xmodem 07 Mar 2021
+'Also code from Andrew Pamment 24 May 2021
 'Version 1.9.5 John Crutti Jr 4-12-2021
 
 OPTION EXPLICIT
@@ -429,11 +430,11 @@ sub introscreen 'opening intro
   print @((ox+2)*fwidth%,(oy+4)*fheight%) "        for  the";
   print @((ox+2)*fwidth%,(oy+5)*fheight%) "    Color Maximite 2";
   print @((ox+2)*fwidth%,(oy+6)*fheight%) "";
-  print @((ox+2)*fwidth%,(oy+7)*fheight%) "       Version 1.9.5";
+  print @((ox+2)*fwidth%,(oy+7)*fheight%) "       Version 1.9.6";
   print @((ox+2)*fwidth%,(oy+8)*fheight%) "           by";
   print @((ox+2)*fwidth%,(oy+9)*fheight%) "       Jay Crutti";
-  print @((ox+2)*fwidth%,(oy+10)*fheight%)"          2021";
-  print @((ox+2)*fwidth%,(oy+11)*fheight%)"";
+  print @((ox+2)*fwidth%,(oy+10)*fheight%)"        and friends";
+  print @((ox+2)*fwidth%,(oy+11)*fheight%)"          2021  ";
   print @((ox+2)*fwidth%,(oy+12)*fheight%)"    www.jaycrutti.com";
 end sub
 
@@ -1277,13 +1278,13 @@ sub credits
   box ox*fwidth%, oy*fheight%, 40*fwidth%, 15*fheight%, 1,,rgb(black)
   print @((ox+2)*fwidth%,(oy+1)*fheight%) "Maxiterm for the Color Maximite 2";
   print @((ox+2)*fwidth%,(oy+2)*fheight%) "---------------------------------";
-  print @((ox+2)*fwidth%,(oy+3)*fheight%) "Version 1.9.5";
+  print @((ox+2)*fwidth%,(oy+3)*fheight%) "Version 1.9.6";
   print @((ox+2)*fwidth%,(oy+4)*fheight%) "John 'Jay' Crutti Jr. and friends. ";
   print @((ox+2)*fwidth%,(oy+5)*fheight%) "Copyright 2021, MIT LICENSE";
   print @((ox+2)*fwidth%,(oy+6)*fheight%) "";
   print @((ox+2)*fwidth%,(oy+7)*fheight%) "Special thanks to Rich Martin,";
   print @((ox+2)*fwidth%,(oy+8)*fheight%) "Robert Severson, Piotr Siwy, vegipete";
-  print @((ox+2)*fwidth%,(oy+9)*fheight%) "Dave Van Wagner, TassyJim, the";
+  print @((ox+2)*fwidth%,(oy+9)*fheight%) "Dave Van Wagner, Andrew Pamment, the";
   print @((ox+2)*fwidth%,(oy+10)*fheight%)"Back Shed users, and the 1980's for";
   print @((ox+2)*fwidth%,(oy+11)*fheight%)"code, support, and inspiration.";
   print @((ox+2)*fwidth%,(oy+12)*fheight%)"";
@@ -1779,7 +1780,7 @@ End DefineFont
 
 '//////////////////////////////////////////////////////////////////////////////
 ' XMODEM receive for Color MaxiMite 2
-' (C) 2021 David R. Van Wagner, John A. Crutti Jr
+' (C) 2021 David R. Van Wagner, John A. Crutti Jr, Andrew Pamment
 ' MIT LICENSE
 '//////////////////////////////////////////////////////////////////////////////
 
