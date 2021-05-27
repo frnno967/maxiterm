@@ -1,5 +1,7 @@
 Planned features:
-Software Routines for Xmodem-Ymodem-Zmodem File Transfer support, transfer progress windows
+Ability to change fonts dynamically
+Toggle for enable/disable of Telnet 0xFF characters being escaped during file transfer
+Software Routines for Xmodem-Ymodem-Zmodem File Transfer support, attractive transfer progress windows
 RS-232 options other than 8-N-1, Flow Control (RTS/CTS & Xon/Xoff) support
 Ability to change sound of keypress sound mode
 Saving/Recall of ALL configuration parameters (queued for v2)
