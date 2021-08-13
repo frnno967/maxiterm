@@ -470,7 +470,6 @@ select case textchoice$
     done% = 0
 end select
 loop until done% = 1
-restorecolor
 end sub
 
 
@@ -497,7 +496,6 @@ select case lfchoice$
 end select
 pause 1200
 loop until done% = 1
-restorecolor
 end sub
 
 
@@ -524,7 +522,6 @@ select case echochoice$
 end select
 pause 1200
 loop until done% = 1
-restorecolor
 end sub
 
 
@@ -553,7 +550,6 @@ select case comchoice$
     done% = 0 ' start over
 end select
 loop until done% = 1
-restorecolor
 startcomport
 end sub
 
@@ -586,7 +582,6 @@ select case comtype$
 end select
 loop until done% = 1
 startcomport
-restorecolor
 onlineflag% = 1 'annnd we're back
 end sub
 
@@ -641,7 +636,6 @@ input "Make Selection: ", comspeedchoice$
 loop until done% = 1
 onlineflag% = 1 'enable so we're back online
 startcomport
-restorecolor
 end sub
 
 
@@ -1110,7 +1104,6 @@ setupcolor
 cls
 FileDialog(NameOfFile$())   ' no options so allow any file to be selected
 welcomebanner
-restorecolor
 end sub
 
 
@@ -1231,7 +1224,6 @@ select case comwindow$
     print @(0,420) "Invalid option. Try again." : pause 1500 : done% = 0
 end select
 loop until done% = 1
-restorecolor
 end sub
 
 
@@ -1265,8 +1257,6 @@ sub dialoghelp
   print @((ox+2)*fwidth%,(oy+22)*fheight%)"ALT+WIN-V Show Version info";
   do while inkey$ = "" : loop
   welcomebanner
-  restorecolor
-'terminal
 end sub
 
 
@@ -1290,10 +1280,7 @@ sub credits
   print @((ox+2)*fwidth%,(oy+12)*fheight%)"";
   print @((ox+2)*fwidth%,(oy+13)*fheight%)"Support email: recstudio@gmail.com";
   do while inkey$ = "" : loop
-
   welcomebanner
-  restorecolor
-'terminal
 end sub
 
 
@@ -1452,7 +1439,6 @@ do
         done% = 0
       end select
   loop until done% = 1
-  restorecolor
 end sub
 
 
