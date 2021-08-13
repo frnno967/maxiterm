@@ -13,4 +13,3 @@ Archiving/Unarchiving for file transfers from within the program
 
 Bugs:
 Blinking cursor support is currently only for white font color right now. 
-Font color choice is changing unexpectedly.
